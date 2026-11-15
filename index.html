@@ -204,10 +204,12 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .cf{position:relative;flex:1;min-height:0;perspective:1000px;perspective-origin:50% 40%;cursor:grab;touch-action:none}
 .cf:active{cursor:grabbing}
 .cf-item{position:absolute;left:50%;top:50%;width:var(--S);height:var(--S);margin-left:calc(var(--S) / -2);margin-top:calc(var(--S) / -2 - var(--S) * .12);
-  will-change:transform;
-  -webkit-box-reflect:below 3px linear-gradient(transparent 62%,rgba(255,255,255,.22))}
+  will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.refl{position:absolute;left:0;right:0;top:calc(100% + 3px);height:100%;transform:scaleY(-1);opacity:.24;pointer-events:none;
+  background:#3a4150 center/cover no-repeat;border-radius:3px;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 58%,#000 100%);mask-image:linear-gradient(to bottom,transparent 58%,#000 100%)}
 .sleeve{position:absolute;inset:0;border-radius:3px;overflow:hidden;background:#2a2a2a;
-  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.55)}
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),6px 0 10px -2px rgba(0,0,0,.55),0 18px 40px rgba(0,0,0,.55)}
 .sleeve img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none}
 .sleeve::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:3px;
   background:
@@ -216,22 +218,20 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),inset 0 0 18px rgba(0,0,0,.35),inset 3px 0 6px rgba(0,0,0,.25)}
 .sleeve .ph{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,#4c5566,#232831)}
 .sleeve .ph svg{width:34%;height:34%;fill:rgba(255,255,255,.35)}
-.disc{position:absolute;top:3%;left:3%;width:94%;height:94%;border-radius:50%;transform:translateX(0);transition:transform .7s cubic-bezier(.3,.8,.25,1);pointer-events:none}
-.cf-item.center.playing .disc{transform:translateX(34%)}
+.disc{position:absolute;top:4%;left:4%;width:92%;height:92%;border-radius:50%;transform:translateX(0);pointer-events:none;visibility:hidden;
+  transition:transform .55s cubic-bezier(.3,.8,.25,1)}
 .disc .vinyl{position:absolute;inset:0;border-radius:50%;
   background:
     radial-gradient(circle,#111 0 2.2%,transparent 2.4%),
     radial-gradient(circle,transparent 0 32%,#0b0b0b 32.5% 34%,transparent 34.5%),
     repeating-radial-gradient(circle,#161616 0 1px,#0d0d0d 1px 2.5px),
     #111;
-  box-shadow:0 6px 20px rgba(0,0,0,.6),inset 0 0 0 2px #050505}
+  box-shadow:0 2px 8px rgba(0,0,0,.55),inset 0 0 0 2px #050505,inset 0 0 0 4px #1d1d1d}
 .disc .vinyl::before{content:"";position:absolute;inset:0;border-radius:50%;
   background:conic-gradient(from 20deg,transparent 0 10%,rgba(255,255,255,.10) 14%,transparent 20% 55%,rgba(255,255,255,.08) 62%,transparent 70%)}
 .disc .lbl{position:absolute;left:33.5%;top:33.5%;width:33%;height:33%;border-radius:50%;background:#c8463a center/cover no-repeat;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
 .disc .lbl::after{content:"";position:absolute;left:46%;top:46%;width:8%;height:8%;border-radius:50%;background:#0a0a0a}
-.cf-item.center.playing .vinyl{animation:spin 3.6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 .np-info{text-align:center;padding:4px 6px 0;min-height:52px}
 .np-t{font-size:18px;font-weight:bold;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .np-a{font-size:14px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -996,7 +996,13 @@ function renderNp(){
       el.className = "cf-item";
       el.innerHTML = `<div class="disc"><div class="vinyl"><div class="lbl"></div></div></div><div class="sleeve">${
         c.img ? `<img src="${esc(c.img)}" alt="" draggable="false">` : `<div class="ph"><svg><use href="#i-note"/></svg></div>`}</div>`;
-      if (c.img) el.querySelector(".lbl").style.backgroundImage = `url("${c.img.replace(/"/g, "%22")}")`;
+      el.insertAdjacentHTML("beforeend", `<div class="refl"></div>`);
+      if (c.img) {
+        const u = `url("${c.img.replace(/"/g, "%22")}")`;
+        el.querySelector(".lbl").style.backgroundImage = u;
+        el.querySelector(".refl").style.backgroundImage = u;
+      }
+      el._disc = el.querySelector(".disc");
       stage.appendChild(el);
     }
     el.dataset.k = k;
@@ -1012,14 +1018,18 @@ function renderNp(){
 function layoutCf(){
   const S = cf.S, gap = S * 0.62, side = S * 0.26;
   const playing = !!(st.player && st.player.is_playing);
+  const moving = !!(cf.anim || cf.dragging);
   cf.els.forEach(el => {
     const k = +el.dataset.k, d = k - cf.pos, ad = Math.abs(d), sg = Math.sign(d), t = Math.min(ad, 1);
     const x = ad <= 1 ? d * gap : sg * (gap + (ad - 1) * side);
     el.style.transform = `translate3d(${x.toFixed(1)}px,0,${(-S * 0.5 * t).toFixed(1)}px) rotateY(${(sg * 60 * t).toFixed(2)}deg)`;
     el.style.zIndex = String(100 - Math.round(ad * 10));
     el.style.opacity = ad > 3.3 ? 0 : ad > 2.3 ? (3.3 - ad).toFixed(2) : 1;
-    el.classList.toggle("center", k === cf.center && ad < 0.5);
-    el.classList.toggle("playing", playing);
+    const peek = playing && k === cf.center ? Math.max(0, 1 - ad * 2) : 0;
+    const disc = el._disc;
+    disc.style.transition = moving ? "none" : "";
+    disc.style.visibility = (peek > 0 || (!moving && k === cf.center)) ? "visible" : "hidden";
+    disc.style.transform = `translateX(${(peek * 17).toFixed(2)}%)`;
   });
 }
 function stopAnim(){ if (cf.anim) { cancelAnimationFrame(cf.anim); cf.anim = null; } }
