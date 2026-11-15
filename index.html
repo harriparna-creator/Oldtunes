@@ -201,7 +201,7 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .np-ctx{flex:1;text-align:center;font-size:11px;color:#999;line-height:1.35;overflow:hidden}
 .np-ctx b{display:block;color:#ddd;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .np-spacer{width:44px}
-.cf{position:relative;flex:1;min-height:0;perspective:1000px;perspective-origin:50% 40%;cursor:grab;touch-action:none}
+.cf{position:relative;flex:1;min-height:0;cursor:grab;touch-action:none;overflow:hidden}
 .cf:active{cursor:grabbing}
 .cf-item{position:absolute;left:50%;top:50%;width:var(--S);height:var(--S);margin-left:calc(var(--S) / -2);margin-top:calc(var(--S) / -2 - var(--S) * .12);
   will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
@@ -627,7 +627,7 @@ function renderNowPlaying(){
   $("#repBtn").innerHTML = `<svg><use href="#i-repeat"/></svg>${rep === "track" ? '<span class="one">1</span>' : ""}`;
   if (p && p.device && typeof p.device.volume_percent === "number" && !volDragging) $("#vol").value = p.device.volume_percent;
   lastLcdKey = ""; renderLcd(); renderSide();
-  if (st.current && st.current.tracks.length) renderTable();
+  if (st.current && st.current.tracks.length && !st.npOpen) renderTable();
 }
 function cardOf(it){
   if (!it) return null;
@@ -886,30 +886,36 @@ function openNp(){
 }
 function closeNp(){
   st.npOpen = false;
+  setTimeout(() => { if (!st.npOpen) { renderTable(); renderSide(); } }, 400);
   const np = $("#np"); np.classList.remove("open"); np.setAttribute("aria-hidden", "true");
 }
 function sizeCf(){
   const box = $("#cf").getBoundingClientRect();
-  cf.S = Math.round(Math.max(120, Math.min(box.width * (box.width < 500 ? 0.72 : 0.6), box.height * 0.74, 420)));
+  cf.S = Math.round(Math.max(120, Math.min(box.width * (box.width < 500 ? 0.62 : 0.42), box.height * 0.72, 420)));
   $("#cf").style.setProperty("--S", cf.S + "px");
+}
+function npList(uri){
+  const p = st.player;
+  if (st.playList && st.playList.tracks.some(t => t.uri === uri)) return st.playList;
+  const ctx = p && p.context && p.context.uri;
+  const src = ctx && Object.values(st.cache).find(s => s.uri === ctx && s.tracks.length);
+  if (src && src.tracks.some(t => t.uri === uri)) return (st.playList = { uri: src.uri, tracks: src.tracks.filter(t => !t.local) });
+  return null;
 }
 function npNeighbors(){
   const p = st.player; if (!p || !p.item) return null;
   const uri = p.item.uri;
-  let list = null;
-  if (st.playList && st.playList.tracks.some(t => t.uri === uri)) list = st.playList.tracks;
-  else {
-    const ctx = p.context && p.context.uri;
-    const src = ctx && Object.values(st.cache).find(s => s.uri === ctx && s.tracks.length);
-    if (src) list = src.tracks.filter(t => !t.local);
-  }
+  const pl = npList(uri), list = pl && pl.tracks;
   let prev = [], next = [];
   const i = list ? list.findIndex(t => t.uri === uri) : -1;
   if (i >= 0 && !p.shuffle_state) {
     prev = list.slice(Math.max(0, i - 3), i).map(cardOf);
     next = list.slice(i + 1, i + 4).map(cardOf);
   }
-  if (!next.length && st.queue && st.queue.for === uri) next = st.queue.items.slice(0, 3);
+  if (!next.length && st.queue) {
+    if (st.queue.for === uri) next = st.queue.items.slice(0, 3);
+    else { const j = st.queue.items.findIndex(c => c.uri === uri); if (j >= 0) next = st.queue.items.slice(j + 1, j + 4); }
+  }
   if (!prev.length) prev = st.history.filter(h => h.uri !== uri).slice(-3);
   return { prev, cur: cardOf(p.item), next };
 }
@@ -922,8 +928,10 @@ async function fetchQueue(force){
   const forUri = p.item.uri;
   try {
     const q = await api("/me/player/queue");
+    const cp = q && q.currently_playing;
+    if (cp && cp.uri !== forUri) { qBusy = false; setTimeout(() => fetchQueue(true), 1200); return; }   // Spotify not caught up yet
     st.queue = { for: forUri, items: ((q && q.queue) || []).filter(Boolean).slice(0, 5).map(cardOf) };
-  } catch(e) { st.queue = { for: forUri, items: [] }; }
+  } catch(e) { if (!st.queue) st.queue = { for: forUri, items: [] }; }
   finally { qBusy = false; }
   renderNp();
 }
@@ -1002,12 +1010,15 @@ function setCover(el, img){
   el.querySelector(".refl i").style.backgroundImage = img ? `url("${img.replace(/"/g, "%22")}")` : "";
 }
 function layoutCf(){
-  const S = cf.S, gap = S * 0.62, side = S * 0.26;
+  // Each cover is drawn flat with its own perspective, so covers never cut through each other
+  const S = cf.S, gap = S * 0.78, side = S * 0.2;
   cf.els.forEach(el => {
     const k = +el.dataset.k, d = k - cf.pos, ad = Math.abs(d), sg = Math.sign(d), t = Math.min(ad, 1);
-    const x = ad <= 1 ? d * gap : sg * (gap + (ad - 1) * side);
-    el.style.transform = `translate3d(${x.toFixed(1)}px,0,${(-S * 0.5 * t).toFixed(1)}px) rotateY(${(sg * 60 * t).toFixed(2)}deg)`;
-    const z = String(100 - Math.round(ad * 10));
+    const e = t * (2 - t);                       // ease: covers turn quickly as they leave the centre
+    const x = ad <= 1 ? d * gap : sg * (gap + (ad - 1) * side);   // follows the finger 1:1
+    const sc = 1 - 0.16 * e;
+    el.style.transform = `translateX(${x.toFixed(1)}px) scale(${sc.toFixed(3)}) perspective(${Math.round(S * 2.6)}px) rotateY(${(sg * 62 * e).toFixed(2)}deg)`;
+    const z = String(1000 - Math.round(ad * 100));
     if (el.style.zIndex !== z) el.style.zIndex = z;
     const o = ad > 3.3 ? "0" : ad > 2.3 ? (3.3 - ad).toFixed(2) : "1";
     if (el.style.opacity !== o) el.style.opacity = o;
@@ -1079,7 +1090,7 @@ function bindNp(){
     const dx = e.clientX - sx; if (Math.abs(dx) > 6) moved = true;
     const now = performance.now(), dt = Math.max(1, now - lastT);
     vel = 0.7 * vel + 0.3 * ((e.clientX - lastX) / dt); lastX = e.clientX; lastT = now;
-    let p = sp - dx / (cf.S * 0.62);
+    let p = sp - dx / (cf.S * 0.78);
     const lo = 0, hi = cf.items.length - 1;
     if (p < lo) p = lo - (lo - p) * 0.3;
     if (p > hi) p = hi + (p - hi) * 0.3;
@@ -1095,7 +1106,7 @@ function bindNp(){
       else animateTo(cf.center);
       return;
     }
-    let target = Math.round(cf.pos - vel * 140 / (cf.S * 0.62));
+    let target = Math.round(cf.pos - vel * 140 / (cf.S * 0.78));
     target = Math.max(cf.center - 1, Math.min(cf.center + 1, target));
     goTo(target);
   });
