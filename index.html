@@ -205,33 +205,18 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .cf:active{cursor:grabbing}
 .cf-item{position:absolute;left:50%;top:50%;width:var(--S);height:var(--S);margin-left:calc(var(--S) / -2);margin-top:calc(var(--S) / -2 - var(--S) * .12);
   will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
-.refl{position:absolute;left:0;right:0;top:calc(100% + 3px);height:100%;transform:scaleY(-1);opacity:.24;pointer-events:none;
-  background:#3a4150 center/cover no-repeat;border-radius:3px;
-  -webkit-mask-image:linear-gradient(to bottom,transparent 58%,#000 100%);mask-image:linear-gradient(to bottom,transparent 58%,#000 100%)}
+.refl{position:absolute;left:0;right:0;top:calc(100% + 3px);height:45%;overflow:hidden;pointer-events:none;border-radius:3px}
+.refl i{position:absolute;left:0;right:0;top:0;height:222%;transform:scaleY(-1);background:#3a4150 center/cover no-repeat;opacity:.3}
+.refl::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(26,26,26,0),#1a1a1a 85%)}
 .sleeve{position:absolute;inset:0;border-radius:3px;overflow:hidden;background:#2a2a2a;
-  box-shadow:0 0 0 1px rgba(0,0,0,.6),6px 0 10px -2px rgba(0,0,0,.55),0 18px 40px rgba(0,0,0,.55)}
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 10px 22px rgba(0,0,0,.5)}
 .sleeve img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none}
 .sleeve::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:3px;
   background:
-    linear-gradient(115deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.04) 28%,rgba(255,255,255,0) 45%,rgba(0,0,0,.10) 100%),
-    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,rgba(0,0,0,.025) 1px 3px);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),inset 0 0 18px rgba(0,0,0,.35),inset 3px 0 6px rgba(0,0,0,.25)}
+    linear-gradient(115deg,rgba(255,255,255,.18) 0%,rgba(255,255,255,.04) 28%,rgba(255,255,255,0) 45%,rgba(0,0,0,.10) 100%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
 .sleeve .ph{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,#4c5566,#232831)}
 .sleeve .ph svg{width:34%;height:34%;fill:rgba(255,255,255,.35)}
-.disc{position:absolute;top:4%;left:4%;width:92%;height:92%;border-radius:50%;transform:translateX(0);pointer-events:none;visibility:hidden;
-  transition:transform .55s cubic-bezier(.3,.8,.25,1)}
-.disc .vinyl{position:absolute;inset:0;border-radius:50%;
-  background:
-    radial-gradient(circle,#111 0 2.2%,transparent 2.4%),
-    radial-gradient(circle,transparent 0 32%,#0b0b0b 32.5% 34%,transparent 34.5%),
-    repeating-radial-gradient(circle,#161616 0 1px,#0d0d0d 1px 2.5px),
-    #111;
-  box-shadow:0 2px 8px rgba(0,0,0,.55),inset 0 0 0 2px #050505,inset 0 0 0 4px #1d1d1d}
-.disc .vinyl::before{content:"";position:absolute;inset:0;border-radius:50%;
-  background:conic-gradient(from 20deg,transparent 0 10%,rgba(255,255,255,.10) 14%,transparent 20% 55%,rgba(255,255,255,.08) 62%,transparent 70%)}
-.disc .lbl{position:absolute;left:33.5%;top:33.5%;width:33%;height:33%;border-radius:50%;background:#c8463a center/cover no-repeat;
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
-.disc .lbl::after{content:"";position:absolute;left:46%;top:46%;width:8%;height:8%;border-radius:50%;background:#0a0a0a}
 .np-info{text-align:center;padding:4px 6px 0;min-height:52px}
 .np-t{font-size:18px;font-weight:bold;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .np-a{font-size:14px;color:#aaa;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -979,8 +964,7 @@ function renderNp(){
   const nb = npNeighbors();
   if (nb && (!st.queue || st.queue.for !== nb.cur.uri)) fetchQueue();
   const items = nb ? [...nb.prev, nb.cur, ...nb.next] : [];
-  const playing = !!(st.player && st.player.is_playing);
-  const key = items.map(c => c.uri).join("|") + (playing ? "+" : "-") + cf.S;
+  const key = items.map(c => c.uri + (c.img ? "*" : "")).join("|") + cf.S;
   if (key === cf.key) return;
   cf.key = key;
   cf.items = items; cf.center = nb ? nb.prev.length : 0; cf.pos = cf.center;
@@ -994,17 +978,10 @@ function renderNp(){
     else {
       el = document.createElement("div");
       el.className = "cf-item";
-      el.innerHTML = `<div class="disc"><div class="vinyl"><div class="lbl"></div></div></div><div class="sleeve">${
-        c.img ? `<img src="${esc(c.img)}" alt="" draggable="false">` : `<div class="ph"><svg><use href="#i-note"/></svg></div>`}</div>`;
-      el.insertAdjacentHTML("beforeend", `<div class="refl"></div>`);
-      if (c.img) {
-        const u = `url("${c.img.replace(/"/g, "%22")}")`;
-        el.querySelector(".lbl").style.backgroundImage = u;
-        el.querySelector(".refl").style.backgroundImage = u;
-      }
-      el._disc = el.querySelector(".disc");
+      el.innerHTML = `<div class="sleeve"></div><div class="refl"><i></i></div>`;
       stage.appendChild(el);
     }
+    setCover(el, c.img);
     el.dataset.k = k;
     fresh.set(id, el);
   });
@@ -1015,21 +992,25 @@ function renderNp(){
   else if (hint) hint.remove();
   layoutCf();
 }
+function setCover(el, img){
+  img = img || "";
+  if (el._img === img) return;
+  el._img = img;
+  el.querySelector(".sleeve").innerHTML = img
+    ? `<img src="${esc(img)}" alt="" draggable="false" decoding="async">`
+    : `<div class="ph"><svg><use href="#i-note"/></svg></div>`;
+  el.querySelector(".refl i").style.backgroundImage = img ? `url("${img.replace(/"/g, "%22")}")` : "";
+}
 function layoutCf(){
   const S = cf.S, gap = S * 0.62, side = S * 0.26;
-  const playing = !!(st.player && st.player.is_playing);
-  const moving = !!(cf.anim || cf.dragging);
   cf.els.forEach(el => {
     const k = +el.dataset.k, d = k - cf.pos, ad = Math.abs(d), sg = Math.sign(d), t = Math.min(ad, 1);
     const x = ad <= 1 ? d * gap : sg * (gap + (ad - 1) * side);
     el.style.transform = `translate3d(${x.toFixed(1)}px,0,${(-S * 0.5 * t).toFixed(1)}px) rotateY(${(sg * 60 * t).toFixed(2)}deg)`;
-    el.style.zIndex = String(100 - Math.round(ad * 10));
-    el.style.opacity = ad > 3.3 ? 0 : ad > 2.3 ? (3.3 - ad).toFixed(2) : 1;
-    const peek = playing && k === cf.center ? Math.max(0, 1 - ad * 2) : 0;
-    const disc = el._disc;
-    disc.style.transition = moving ? "none" : "";
-    disc.style.visibility = (peek > 0 || (!moving && k === cf.center)) ? "visible" : "hidden";
-    disc.style.transform = `translateX(${(peek * 17).toFixed(2)}%)`;
+    const z = String(100 - Math.round(ad * 10));
+    if (el.style.zIndex !== z) el.style.zIndex = z;
+    const o = ad > 3.3 ? "0" : ad > 2.3 ? (3.3 - ad).toFixed(2) : "1";
+    if (el.style.opacity !== o) el.style.opacity = o;
   });
 }
 function stopAnim(){ if (cf.anim) { cancelAnimationFrame(cf.anim); cf.anim = null; } }
@@ -1058,8 +1039,20 @@ async function commitSkip(k){
   if (p) setPlayer({ ...p, progress_ms: 0, is_playing: true,
     item: { name: target.name, uri: target.uri, duration_ms: target.dur || 0, artists: [{ name: target.artist }],
             album: { name: target.album || "", images: target.img ? [{ url: target.img, width: 640 }] : [] } } }, true);
-  st.pendingUri = target.uri; st.pendingUntil = Date.now() + 4000;
+  st.pendingUri = target.uri; st.pendingUntil = Date.now() + 6000;
   if (st.demo) { st.pendingUri = null; return; }
+  const pl = st.playList;
+  if (pl && pl.uri && /^spotify:(playlist|album):/.test(pl.uri) && pl.tracks.some(t => t.uri === target.uri) && !(p && p.shuffle_state)) {
+    return play({ context_uri: pl.uri, offset: { uri: target.uri } });
+  }
+  if (pl && pl.tracks.some(t => t.uri === target.uri) && !(p && p.shuffle_state)) {
+    const i = pl.tracks.findIndex(t => t.uri === target.uri);
+    st.playList = { uri: pl.uri, tracks: pl.tracks };
+    return play({ uris: pl.tracks.slice(Math.max(0, i - 50), i + 50).map(t => t.uri), offset: { uri: target.uri } });
+  }
+  if (steps < 0) {   // Spotify restarts the song instead of going back if we're a few seconds in
+    await api("/me/player/seek?position_ms=0", { method: "PUT" }).catch(() => {});
+  }
   const n = Math.abs(steps);
   for (let i = 0; i < n; i++) {
     await cmd("POST", steps > 0 ? "/me/player/next" : "/me/player/previous",
