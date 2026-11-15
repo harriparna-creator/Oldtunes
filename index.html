@@ -241,16 +241,10 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 @media (min-width:761px){#np{padding-left:40px;padding-right:40px}}
 
 /* ---------- press feedback ---------- */
-.tbtn,.sbtn,.aqua,.np-x{position:relative;transition:transform .16s cubic-bezier(.3,.7,.4,1.5),filter .16s}
-.tbtn.pressed,.sbtn.pressed,.aqua.pressed,.np-x.pressed{transform:scale(.88);filter:brightness(.8);transition-duration:.06s}
-.tbtn.pressed{box-shadow:inset 0 2px 5px rgba(0,0,0,.5)}
-.sbtn.pressed,.aqua.pressed{box-shadow:inset 0 2px 4px rgba(0,0,0,.45)}
-.pulse::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;animation:ring .5s ease-out forwards}
-.np-x.pulse::after{border-radius:50%}
-@keyframes ring{from{box-shadow:0 0 0 0 rgba(95,155,240,.75)}to{box-shadow:0 0 0 12px rgba(95,155,240,0)}}
-.srclist li,#rows tr{transition:background-color .25s}
-.srclist li.tap{background:#b9c8e2}
-#rows tr.tap td{background:#c9d9f4}
+.tbtn,.sbtn,.aqua,.np-x{transition:transform .18s ease-out,filter .18s ease-out}
+.tbtn.pressed,.sbtn.pressed,.aqua.pressed,.np-x.pressed{transform:scale(.95);filter:brightness(.9);transition-duration:.05s}
+.srclist li.tap{background:#c8d3e6}
+#rows tr.tap td{background:#dde7f8}
 
 ::-webkit-scrollbar{width:15px;height:15px}
 ::-webkit-scrollbar-track{background:linear-gradient(90deg,#d8d8d8,#f3f3f3);border-left:1px solid #c6c6c6}
@@ -1217,16 +1211,15 @@ function bindPress(){
   const sel = ".tbtn,.sbtn,.aqua,.np-x";
   document.addEventListener("pointerdown", e => {
     const b = e.target.closest(sel);
-    if (b) { b.classList.remove("pulse"); b.classList.add("pressed"); b._pt = performance.now(); return; }
+    if (b) { b.classList.add("pressed"); b._pt = performance.now(); return; }
     const li = e.target.closest(".srclist li, #rows tr");
-    if (li) { li.classList.add("tap"); setTimeout(() => li.classList.remove("tap"), 220); }
+    if (li) { li.classList.add("tap"); setTimeout(() => li.classList.remove("tap"), 120); }
   }, { passive: true });
   const up = e => {
     document.querySelectorAll(".pressed").forEach(b => {
       const wait = Math.max(0, 90 - (performance.now() - (b._pt || 0)));   // quick taps still show the press
       setTimeout(() => {
         b.classList.remove("pressed");
-        if (e.type === "pointerup") { void b.offsetWidth; b.classList.add("pulse"); setTimeout(() => b.classList.remove("pulse"), 520); }
       }, wait);
     });
   };
