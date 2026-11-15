@@ -208,6 +208,11 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .refl{position:absolute;left:0;right:0;top:calc(100% + 3px);height:45%;overflow:hidden;pointer-events:none;border-radius:3px}
 .refl i{position:absolute;left:0;right:0;top:0;height:222%;transform:scaleY(-1);background:#3a4150 center/cover no-repeat;opacity:.3}
 .refl::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(26,26,26,0),#1a1a1a 85%)}
+.cf-item::before{content:"";position:absolute;left:-14%;right:-14%;top:-14%;bottom:-14%;border-radius:30%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(150,185,255,.28),rgba(150,185,255,0));opacity:0;transition:opacity .4s}
+.cf-item.hl::before{opacity:1}
+.cf-item .sleeve{transition:box-shadow .4s}
+.cf-item.hl .sleeve{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 14px 30px rgba(0,0,0,.6)}
 .sleeve{position:absolute;inset:0;border-radius:3px;overflow:hidden;background:#2a2a2a;
   box-shadow:0 0 0 1px rgba(0,0,0,.6),0 10px 22px rgba(0,0,0,.5)}
 .sleeve img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none}
@@ -239,6 +244,15 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .np-ctl .sbtn.on svg{fill:#fff}.np-ctl .sbtn .one{color:#fff}
 .np-hint{position:absolute;left:0;right:0;top:50%;text-align:center;color:#777;font-size:13px}
 @media (min-width:761px){#np{padding-left:40px;padding-right:40px}}
+
+/* ---------- bottom sheets ---------- */
+.sheet{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;max-width:460px;margin:0 auto;
+  background:linear-gradient(#f4f4f4,#dcdcdc);border:1px solid #777;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  padding:12px 14px;font-size:13px;line-height:1.45;color:#222;transform:translateY(140%);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.sheet.show{transform:none}
+.sheet p{margin:4px 0 10px}
+.sheet-btns{display:flex;justify-content:flex-end;gap:8px}
+.sheet .aqua{margin-top:0;text-decoration:none;padding:6px 16px}
 
 /* ---------- press feedback ---------- */
 .tbtn,.sbtn,.aqua,.np-x{transition:transform .18s ease-out,filter .18s ease-out}
@@ -351,6 +365,17 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 </div>
 
 <div id="toast"></div>
+
+<div class="sheet" id="wake" role="dialog" aria-label="Wake Spotify">
+  <b>Spotify is asleep</b>
+  <p id="wakeTxt"></p>
+  <div class="sheet-btns"><span class="aqua grey" id="wakeX">Not now</span><a class="aqua" href="spotify:" id="wakeGo">Wake Spotify</a></div>
+</div>
+<div class="sheet" id="tip">
+  <b>Make it full screen</b>
+  <p>Tap the Share button in Safari, then <b>Add to Home Screen</b> (keep "Open as Web App" on). Open Old Tunes from that icon and sign in there once.</p>
+  <div class="sheet-btns"><span class="aqua grey" id="tipX">Got it</span></div>
+</div>
 
 <div id="setup">
   <div class="win">
@@ -671,10 +696,17 @@ async function loadDevices(){
   try { const j = await api("/me/player/devices"); st.devices = (j && j.devices) || []; } catch(e) { st.devices = []; }
   renderDevices();
 }
+function pickDevice(){
+  const list = st.devices, saved = store.get("ot_device");
+  const has = id => id && list.some(d => d.id === id);
+  if (has(st.deviceId)) return st.deviceId;
+  const active = list.find(d => d.is_active);
+  const phone = isMobile && list.find(d => /smartphone/i.test(d.type || ""));
+  return (active && active.id) || (has(saved) && saved) || (phone && phone.id) || st.sdkDevice || (list[0] && list[0].id) || null;
+}
 function renderDevices(){
   const sel = $("#dev");
-  const active = st.devices.find(d => d.is_active);
-  if (!st.deviceId || !st.devices.some(d => d.id === st.deviceId)) st.deviceId = (active && active.id) || st.sdkDevice || (st.devices[0] && st.devices[0].id) || null;
+  st.deviceId = pickDevice();
   sel.innerHTML = st.devices.length
     ? st.devices.map(d => `<option value="${esc(d.id)}" ${d.id===st.deviceId?"selected":""}>${esc(d.id===st.sdkDevice ? "This browser" : d.name)}</option>`).join("")
     : `<option value="">No devices — open Spotify</option>`;
@@ -686,25 +718,60 @@ async function ensureDevice(){
 }
 
 /* ---------------- playback control ---------------- */
-function noDevice(){ toast("No Spotify device found. Open the Spotify app on your phone or computer, then pick it under the speaker menu at the bottom.", 6000); loadDevices(); }
+function noDevice(){ needWake(null); }
+// iPhone suspends the Spotify app in the background, and then Spotify can't be controlled.
+// Instead of failing, remember what you wanted, offer a one-tap wake, and finish the job when you come back.
+function needWake(body){
+  st.wake = { body, at: Date.now() };
+  $("#wakeTxt").textContent = isMobile
+    ? "Your iPhone has put the Spotify app to sleep. Tap below. Spotify opens for a second, then come back here and your song starts."
+    : "No Spotify device is awake. Open Spotify on this computer or your phone, then come back.";
+  $("#tip").classList.remove("show");
+  $("#wake").classList.add("show");
+  loadDevices();
+}
+function hideWake(){ $("#wake").classList.remove("show"); }
+async function resumeAfterWake(){
+  const w = st.wake;
+  if (!w || Date.now() - w.at > 5 * 60000) return;
+  st.wake = null; hideWake();
+  for (let i = 0; i < 4; i++) {                        // Spotify needs a moment to announce itself
+    await loadDevices();
+    if (st.devices.length) break;
+    await sleep(900);
+  }
+  if (!st.devices.length) return needWake(w.body);
+  if (w.body) play(w.body); else refreshPlayer();
+}
 function activateSdk(){ if (st.sdk && st.deviceId === st.sdkDevice) { try { st.sdk.activateElement(); } catch(e){} } }
 
 async function play(body){
   if (st.demo) return demoPlay(body);
   const id = await ensureDevice();
-  if (!id) return noDevice();
-  try { await api("/me/player/play?device_id=" + encodeURIComponent(id), { method:"PUT", body: body || {} }); }
-  catch(e) {
-    if (e.status === 404) { st.deviceId = null; return noDevice(); }
-    if (e.status === 403) return toast("Spotify refused: " + e.message + (e.reason==="PREMIUM_REQUIRED" ? " (Premium needed)" : ""));
-    return toast("Couldn't play: " + e.message);
+  const ids = [...new Set([id, store.get("ot_device")].filter(Boolean))];
+  const go = did => api("/me/player/play?device_id=" + encodeURIComponent(did), { method:"PUT", body: body || {} });
+  for (const did of ids) {
+    try { await go(did); return played(did); }
+    catch(e) {
+      if (e.status === 404) {
+        try {   // device known but idle: hand playback to it first, then play
+          await api("/me/player", { method:"PUT", body:{ device_ids:[did], play:false } });
+          await sleep(350); await go(did); return played(did);
+        } catch(_) { continue; }
+      }
+      if (e.status === 403) return toast("Spotify refused: " + e.message + (e.reason==="PREMIUM_REQUIRED" ? " (Premium needed)" : ""));
+      return toast("Couldn't play: " + e.message);
+    }
   }
-  soon();
+  needWake(body);
+}
+function played(did){
+  st.deviceId = did; store.set("ot_device", did); st.wake = null; hideWake(); soon();
 }
 async function cmd(method, path, local){
   if (st.demo) return;
   if (local && st.sdk && st.player && st.player.device && st.player.device.id === st.sdkDevice) { try { await local(); soon(); return; } catch(e){} }
-  try { await api(path, { method }); } catch(e) { if (e.status === 404) return noDevice(); toast(e.message); }
+  try { await api(path, { method }); } catch(e) { if (e.status === 404) return needWake(null); toast(e.message); }
   soon();
 }
 function playTrackN(n){
@@ -871,7 +938,10 @@ function bind(){
     } else if (e.key === "ArrowRight" && (e.metaKey || e.ctrlKey)) $("#nextBtn").click();
     else if (e.key === "ArrowLeft" && (e.metaKey || e.ctrlKey)) $("#prevBtn").click();
   });
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshPlayer(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { if (st.wake) resumeAfterWake(); else { refreshPlayer(); loadDevices(); } } });
+  window.addEventListener("pageshow", () => { if (st.wake) resumeAfterWake(); });
+  $("#wakeX").onclick = () => { st.wake = null; hideWake(); };
+  $("#tipX").onclick = () => { $("#tip").classList.remove("show"); store.set("ot_tip", "1"); };
 }
 let volDragging = false;
 function seekTo(ms){
@@ -881,7 +951,8 @@ function seekTo(ms){
 }
 
 /* ---------------- Now Playing: cover flow ---------------- */
-const cf = { items: [], pos: 0, center: 0, els: new Map(), key: "", dragging: false, anim: null, S: 260 };
+const cf = { items: [], pos: 0, center: 0, els: new Map(), key: "", dragging: false, S: 260,
+  target: 0, v: 0, settling: false, m: 1, mv: 0, mt: 1, raf: null, last: 0 };
 let npScrub = false;
 
 function openNp(){
@@ -897,7 +968,7 @@ function closeNp(){
 }
 function sizeCf(){
   const box = $("#cf").getBoundingClientRect();
-  cf.S = Math.round(Math.max(120, Math.min(box.width * (box.width < 500 ? 0.62 : 0.42), box.height * 0.72, 420)));
+  cf.S = Math.round(Math.max(120, Math.min(box.width * (box.width < 500 ? 0.68 : 0.4), box.height * 0.7, 420)));
   $("#cf").style.setProperty("--S", cf.S + "px");
 }
 function npList(uri){
@@ -915,14 +986,14 @@ function npNeighbors(){
   let prev = [], next = [];
   const i = list ? list.findIndex(t => t.uri === uri) : -1;
   if (i >= 0 && !p.shuffle_state) {
-    prev = list.slice(Math.max(0, i - 3), i).map(cardOf);
-    next = list.slice(i + 1, i + 4).map(cardOf);
+    prev = list.slice(Math.max(0, i - 10), i).map(cardOf);
+    next = list.slice(i + 1, i + 11).map(cardOf);
   }
   if (!next.length && st.queue) {
-    if (st.queue.for === uri) next = st.queue.items.slice(0, 3);
-    else { const j = st.queue.items.findIndex(c => c.uri === uri); if (j >= 0) next = st.queue.items.slice(j + 1, j + 4); }
+    if (st.queue.for === uri) next = st.queue.items.slice(0, 10);
+    else { const j = st.queue.items.findIndex(c => c.uri === uri); if (j >= 0) next = st.queue.items.slice(j + 1, j + 11); }
   }
-  if (!prev.length) prev = st.history.filter(h => h.uri !== uri).slice(-3);
+  if (!prev.length) prev = st.history.filter(h => h.uri !== uri).slice(-10);
   return { prev, cur: cardOf(p.item), next };
 }
 let qBusy = false;
@@ -936,7 +1007,7 @@ async function fetchQueue(force){
     const q = await api("/me/player/queue");
     const cp = q && q.currently_playing;
     if (cp && cp.uri !== forUri) { qBusy = false; setTimeout(() => fetchQueue(true), 1200); return; }   // Spotify not caught up yet
-    st.queue = { for: forUri, items: ((q && q.queue) || []).filter(Boolean).slice(0, 5).map(cardOf) };
+    st.queue = { for: forUri, items: ((q && q.queue) || []).filter(Boolean).slice(0, 12).map(cardOf) };
   } catch(e) { if (!st.queue) st.queue = { for: forUri, items: [] }; }
   finally { qBusy = false; }
   renderNp();
@@ -974,14 +1045,14 @@ function renderNpTick(){
 function renderNp(){
   if (!st.npOpen) return;
   renderNpTick();
-  if (cf.dragging || cf.anim) return;
+  if (cf.dragging || cf.settling) return;
   const nb = npNeighbors();
   if (nb && (!st.queue || st.queue.for !== nb.cur.uri)) fetchQueue();
   const items = nb ? [...nb.prev, nb.cur, ...nb.next] : [];
   const key = items.map(c => c.uri + (c.img ? "*" : "")).join("|") + cf.S;
   if (key === cf.key) return;
   cf.key = key;
-  cf.items = items; cf.center = nb ? nb.prev.length : 0; cf.pos = cf.center;
+  cf.items = items; cf.center = nb ? nb.prev.length : 0; cf.pos = cf.target = cf.center; cf.v = 0;
 
   const stage = $("#cf"), old = cf.els, fresh = new Map(), seen = {};
   items.forEach((c, k) => {
@@ -1015,37 +1086,53 @@ function setCover(el, img){
     : `<div class="ph"><svg><use href="#i-note"/></svg></div>`;
   el.querySelector(".refl i").style.backgroundImage = img ? `url("${img.replace(/"/g, "%22")}")` : "";
 }
+// The strip moves as one piece; when it comes to rest the centre cover "pops" up and lights up.
+const SPACING = 0.8;
 function layoutCf(){
-  // Each cover is drawn flat with its own perspective, so covers never cut through each other
-  const S = cf.S, gap = S * 0.78, side = S * 0.2;
+  const S = cf.S, sp = S * SPACING, m = cf.m;
   cf.els.forEach(el => {
-    const k = +el.dataset.k, d = k - cf.pos, ad = Math.abs(d), sg = Math.sign(d), t = Math.min(ad, 1);
-    const e = t * (2 - t);                       // ease: covers turn quickly as they leave the centre
-    const x = ad <= 1 ? d * gap : sg * (gap + (ad - 1) * side);   // follows the finger 1:1
-    const sc = 1 - 0.16 * e;
-    el.style.transform = `translateX(${x.toFixed(1)}px) scale(${sc.toFixed(3)}) perspective(${Math.round(S * 2.6)}px) rotateY(${(sg * 62 * e).toFixed(2)}deg)`;
+    const k = +el.dataset.k, d = k - cf.pos, ad = Math.abs(d);
+    const vis = ad < 4.5 ? "" : "hidden";
+    if (el.style.visibility !== vis) el.style.visibility = vis;
+    if (vis) return;
+    const w = Math.max(0, 1 - ad);                 // how close this cover is to the centre
+    const sc = 0.76 + 0.24 * w * m;                // only grows once the strip has settled
+    el.style.transform = `translate3d(${(d * sp).toFixed(1)}px,0,0) scale(${sc.toFixed(4)})`;
+    const op = (1 - Math.min(1, Math.max(0, m)) * (1 - w) * 0.45).toFixed(3);
+    if (el.style.opacity !== op) el.style.opacity = op;
     const z = String(1000 - Math.round(ad * 100));
     if (el.style.zIndex !== z) el.style.zIndex = z;
-    const o = ad > 3.3 ? "0" : ad > 2.3 ? (3.3 - ad).toFixed(2) : "1";
-    if (el.style.opacity !== o) el.style.opacity = o;
+    el.classList.toggle("hl", m > 0.6 && ad < 0.5);
   });
 }
-function stopAnim(){ if (cf.anim) { cancelAnimationFrame(cf.anim); cf.anim = null; } }
-function animateTo(target, done){
-  stopAnim();
-  const from = cf.pos, dist = target - from, dur = Math.min(560, 260 + Math.abs(dist) * 200), t0 = performance.now();
-  if (Math.abs(dist) < 0.001) { cf.pos = target; layoutCf(); done && done(); return; }
-  const step = now => {
-    const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
-    cf.pos = from + dist * e; layoutCf();
-    if (t < 1) cf.anim = requestAnimationFrame(step);
-    else { cf.anim = null; cf.pos = target; layoutCf(); done && done(); }
-  };
-  cf.anim = requestAnimationFrame(step);
+function kickCf(){ if (!cf.raf) { cf.last = performance.now(); cf.raf = requestAnimationFrame(tickCf); } }
+function tickCf(now){
+  const dt = Math.min(0.034, Math.max(0.001, (now - cf.last) / 1000)); cf.last = now;
+  let busy = cf.dragging;
+  if (!cf.dragging && cf.settling) {                // strip glides to the target song (critically damped spring)
+    const k = 120, c = 2 * Math.sqrt(k);
+    cf.v += (-k * (cf.pos - cf.target) - c * cf.v) * dt;
+    cf.pos += cf.v * dt;
+    if (Math.abs(cf.pos - cf.target) < 0.002 && Math.abs(cf.v) < 0.03) { cf.pos = cf.target; cf.v = 0; cf.settling = false; onSettled(); }
+    else busy = true;
+  }
+  const up = cf.mt > 0.5;                           // the "pop": bouncy going up, quick going down
+  const km = up ? 230 : 500, cm = 2 * Math.sqrt(km) * (up ? 0.42 : 1);
+  cf.mv += (-km * (cf.m - cf.mt) - cm * cf.mv) * dt;
+  cf.m += cf.mv * dt;
+  if (Math.abs(cf.m - cf.mt) < 0.002 && Math.abs(cf.mv) < 0.02) { cf.m = cf.mt; cf.mv = 0; } else busy = true;
+  layoutCf();
+  cf.raf = busy ? requestAnimationFrame(tickCf) : null;
 }
-function goTo(k){
-  k = Math.max(0, Math.min(cf.items.length - 1, k));
-  animateTo(k, () => commitSkip(k));
+function onSettled(){
+  cf.mt = 1; kickCf();
+  const k = cf.target;
+  if (k !== cf.center) commitSkip(k); else renderNp();
+}
+function glideTo(k, v){
+  cf.target = Math.max(0, Math.min(cf.items.length - 1, k));
+  if (v !== undefined) cf.v = v;
+  cf.settling = true; cf.mt = 0; kickCf();
 }
 async function commitSkip(k){
   const steps = k - cf.center;
@@ -1078,8 +1165,11 @@ async function commitSkip(k){
   }
 }
 function npStep(dir){
-  if (dir < 0 && progressNow() > 3000) return seekTo(0);
-  if (cf.items[cf.center + dir] && !cf.anim && !cf.dragging) return goTo(cf.center + dir);
+  if (dir < 0 && progressNow() > 3000 && !cf.settling) return seekTo(0);
+  if (cf.items.length && !cf.dragging) {
+    const base = cf.settling ? cf.target : cf.center;
+    if (cf.items[base + dir]) return glideTo(base + dir);
+  }
   (dir > 0 ? $("#nextBtn") : $("#prevBtn")).click();
 }
 function bindNp(){
@@ -1088,37 +1178,38 @@ function bindNp(){
   stage.addEventListener("pointerdown", e => {
     if (!cf.items.length) return;
     id = e.pointerId; try { stage.setPointerCapture(id); } catch(_){}
-    stopAnim(); cf.dragging = true;
+    cf.dragging = true; cf.settling = false; cf.v = 0; cf.mt = 0; kickCf();
     sx = lastX = e.clientX; sp = cf.pos; moved = false; lastT = performance.now(); vel = 0;
   });
   stage.addEventListener("pointermove", e => {
     if (e.pointerId !== id) return;
     const dx = e.clientX - sx; if (Math.abs(dx) > 6) moved = true;
     const now = performance.now(), dt = Math.max(1, now - lastT);
-    vel = 0.7 * vel + 0.3 * ((e.clientX - lastX) / dt); lastX = e.clientX; lastT = now;
-    let p = sp - dx / (cf.S * 0.78);
+    vel = 0.6 * vel + 0.4 * ((e.clientX - lastX) / dt); lastX = e.clientX; lastT = now;
+    let p = sp - dx / (cf.S * SPACING);
     const lo = 0, hi = cf.items.length - 1;
     if (p < lo) p = lo - (lo - p) * 0.3;
     if (p > hi) p = hi + (p - hi) * 0.3;
-    cf.pos = p; layoutCf();
+    cf.pos = p;
   });
   stage.addEventListener("pointerup", e => {
     if (e.pointerId !== id) return;
     id = null; cf.dragging = false;
+    if (performance.now() - lastT > 80) vel = 0;          // finger stopped before lifting: no fling
     if (!moved) {
       const hit = document.elementFromPoint(e.clientX, e.clientY);
       const it = hit && hit.closest(".cf-item");
-      if (it) { const k = +it.dataset.k; if (k === cf.center) togglePlay(); else goTo(k); }
-      else animateTo(cf.center);
+      const k = it ? +it.dataset.k : Math.round(cf.pos);
+      if (k === cf.center && Math.abs(cf.pos - k) < 0.05) { cf.mt = 1; kickCf(); togglePlay(); }
+      else glideTo(k, 0);
       return;
     }
-    let target = Math.round(cf.pos - vel * 140 / (cf.S * 0.78));
-    target = Math.max(cf.center - 1, Math.min(cf.center + 1, target));
-    goTo(target);
+    const v0 = Math.max(-30, Math.min(30, -vel * 1000 / (cf.S * SPACING)));   // songs per second
+    glideTo(Math.round(cf.pos + v0 * 0.22), v0);
   });
   stage.addEventListener("pointercancel", e => {
     if (e.pointerId !== id) return;
-    id = null; cf.dragging = false; animateTo(cf.center);
+    id = null; cf.dragging = false; glideTo(Math.round(cf.pos), 0);
   });
 
   // progress scrubbing
@@ -1233,6 +1324,9 @@ async function start(){
   setInterval(renderLcd, 250);
   setInterval(() => { st.lineToggle++; }, 5000);
 
+  const standalone = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !standalone && !store.get("ot_tip")) $("#tip").classList.add("show");
+  if (standalone) document.documentElement.classList.add("standalone");
   if (st.demo) {
     demoData(); renderSide(); loadDevices();
     openSource(sourceFor("p1")); st.selected = 3; demoPlay({ offset:{ uri: st.cache.p1.tracks[2].uri } });
@@ -1248,6 +1342,7 @@ async function start(){
   initSdk();
   refreshPlayer(); loadDevices();
   setInterval(() => { if (!document.hidden) refreshPlayer(); }, 3000);
+  setInterval(() => { if (!document.hidden && !st.wake) loadDevices(); }, 20000);
   await loadPlaylists().catch(e => toast("Couldn't load playlists: " + e.message));
   const last = store.get("ot_last");
   openSource(sourceFor(last) || sourceFor(st.playlists.find(plReadable)?.id) || sourceFor("liked"));
