@@ -1089,11 +1089,11 @@ function setCover(el, img){
     : `<div class="ph"><svg><use href="#i-note"/></svg></div>`;
   el.querySelector(".refl i").style.backgroundImage = img ? `url("${img.replace(/"/g, "%22")}")` : "";
 }
-// Covers sit on a ring that turns as one piece; the settled centre cover pops up and lights up.
-const SPACING = 0.76;
+// The strip moves as one piece; when it comes to rest the centre cover pops up and lights up.
+const SPACING = 0.8;
 function layoutCf(){
   const n = cf.items.length; if (!n) return;
-  const S = cf.S, m = cf.m, R = S * 1.45, P = S * 3, STEP = 0.6;   // STEP: radians between songs
+  const S = cf.S, m = cf.m, sp = S * SPACING;   // STEP: radians between songs
   const lo = Math.max(0, Math.floor(cf.pos) - 4), hi = Math.min(n - 1, Math.ceil(cf.pos) + 4);
   cf.els.forEach((el, k) => { if (k < lo || k > hi) { el.remove(); cf.els.delete(k); } });
   const stage = $("#cf");
@@ -1107,18 +1107,14 @@ function layoutCf(){
       setCover(el, cf.items[k].img);
       stage.appendChild(el); cf.els.set(k, el);
     }
-    const d = k - cf.pos, ad = Math.abs(d), th = d * STEP, ath = Math.abs(th);
-    const vis = ath < 1.75 ? "" : "hidden";
+    const d = k - cf.pos, ad = Math.abs(d);
+    const vis = ad < 4 ? "" : "hidden";
     if (el.style.visibility !== vis) el.style.visibility = vis;
     if (vis) continue;
-    const z = R * (Math.cos(th) - 1), ps = P / (P - z);
-    const x = R * Math.sin(th) * ps, y = z * 0.12 * ps;   // seen slightly from above: far covers sit higher
-    const w = Math.max(0, 1 - ad);
-    const sc = (0.8 + 0.2 * w * m) * ps;
-    el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${sc.toFixed(4)}) perspective(${Math.round(P)}px) rotateY(${(th * 57.2958).toFixed(2)}deg)`;
-    let op = 1 - Math.min(1, Math.max(0, m)) * (1 - w) * 0.4;
-    if (ath > 1.2) op *= Math.max(0, (1.75 - ath) / 0.55);
-    op = op.toFixed(3);
+    const w = Math.max(0, 1 - ad);                 // how close this cover is to the centre
+    const sc = 0.76 + 0.24 * w * m;                // only grows once the strip has settled
+    el.style.transform = `translate3d(${(d * sp).toFixed(1)}px,0,0) scale(${sc.toFixed(4)})`;
+    const op = (1 - Math.min(1, Math.max(0, m)) * (1 - w) * 0.45).toFixed(3);
     if (el.style.opacity !== op) el.style.opacity = op;
     const zi = String(1000 - Math.round(ad * 100));
     if (el.style.zIndex !== zi) el.style.zIndex = zi;
