@@ -524,6 +524,16 @@ td.num,td.time{color:var(--sub)}
 .np-fill{height:4px;background:#fff}
 .np-knob{width:12px;height:12px;background:#fff;top:14px}
 
+/* favourite playlists */
+.srclist li .fav{margin-left:auto;flex:none;width:30px;height:26px;margin-right:-6px;border:0;background:none;padding:0;display:grid;place-items:center;cursor:pointer;color:#b8b8bd}
+.srclist li .fav svg{width:15px;height:15px;fill:currentColor}
+.srclist li .fav.on{color:#f5b301}
+.srclist li .spk+.fav{margin-left:4px}
+.srclist li.sel .fav{color:rgba(255,255,255,.7)}
+.srclist li.sel .fav.on{color:#ffd54a}
+.srclist li.grp{margin:10px 8px 2px;padding:0 10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--sub);cursor:default}
+@media (max-width:760px){ .srclist li .fav{width:40px;height:34px} .srclist li .fav svg{width:18px;height:18px} }
+
 /* thin scrollbars */
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent;border:0}
@@ -550,6 +560,8 @@ td.num,td.time{color:var(--sub)}
   <symbol id="i-shelf" viewBox="0 0 16 16"><rect x="1" y="12" width="14" height="2.5" rx=".6" fill="#8a5a2b"/><rect x="2" y="3.5" width="4" height="8.2" fill="#d9534f"/><rect x="6.4" y="4.5" width="3.6" height="7.2" fill="#3f7fd6"/><rect x="10.4" y="2.8" width="3.8" height="8.9" fill="#e0b13a"/></symbol>
   <symbol id="i-shelfadd" viewBox="0 0 24 24"><rect x="2" y="18" width="20" height="3" rx="1"/><rect x="3" y="6" width="7" height="11" rx="1"/><path d="M15 7h2.2v3.3h3.3v2.2h-3.3v3.3H15v-3.3h-3.3v-2.2H15z"/></symbol>
   <symbol id="i-shelfon" viewBox="0 0 24 24"><rect x="2" y="18" width="20" height="3" rx="1"/><rect x="3" y="6" width="7" height="11" rx="1"/><path d="M11.5 11.5l2-2 2.3 2.3 4.7-4.7 2 2-6.7 6.7z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></symbol>
+  <symbol id="i-staro" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
   <symbol id="i-pl" viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#6f8fc7" stroke="#3d5d98"/><path d="M4 5h5M4 8h5M4 11h3" stroke="#fff" stroke-width="1.3"/><path d="M11 4.5v5.2a1.4 1.4 0 11-.9-1.3V4.5z" fill="#fff"/></symbol>
   <symbol id="i-plshared" viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#9aa7bd" stroke="#5f6b80"/><path d="M4 5h5M4 8h5M4 11h3" stroke="#fff" stroke-width="1.3"/><path d="M11 4.5v5.2a1.4 1.4 0 11-.9-1.3V4.5z" fill="#fff"/></symbol>
   <symbol id="i-lib" viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" rx="2" fill="#5f9be6" stroke="#2f62ad"/><path d="M6 4v6.2A1.6 1.6 0 107 11.6V6.2l4.5-1v4A1.6 1.6 0 1012.5 10.6V3z" fill="#fff"/></symbol>
@@ -670,6 +682,7 @@ const SCOPES = [
 // Inside the Old Tunes iPhone app, the native shell sets window.OT_NATIVE and runs Spotify sign-in in the
 // system sign-in sheet. Spotify sends the result to this page (the https address you registered); when the
 // sign-in was started by the app, this page just hands the result straight back to the app.
+const BUILD = "20261116142819";      // changes with every update; used to pick up new versions straight away
 const NATIVE = window.OT_NATIVE || null;
 const BOUNCE = (() => {
   const p = new URLSearchParams(location.search);
@@ -851,16 +864,45 @@ function sourceFor(id){
   return (st.cache[id] = src);
 }
 
+/* ---------------- updates: reload when a newer version is online ---------------- */
+async function checkForUpdate(){
+  try {
+    const r = await fetch(location.pathname + "?check=" + Date.now(), { cache: "no-store" });
+    const m = (await r.text()).match(/const BUILD = "(\d+)"/);
+    if (m && m[1] > BUILD) location.replace(location.pathname + "?v=" + m[1]);
+  } catch(e) {}
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkForUpdate(); });
+
+/* ---------------- favourite playlists ---------------- */
+function favGet(){ try { return JSON.parse(store.get("ot_favs") || "[]"); } catch(e) { return []; } }
+function favToggle(id){
+  const f = favGet(), i = f.indexOf(id);
+  if (i >= 0) f.splice(i, 1); else f.push(id);
+  store.set("ot_favs", JSON.stringify(f));
+  renderSide();
+  toast(i >= 0 ? "Unpinned from Favourites" : "Pinned to Favourites", 1800);
+}
+
 /* ---------------- rendering ---------------- */
 function renderSide(){
   const cur = st.current && st.current.id;
   const playingCtx = st.player && st.player.context && st.player.context.uri;
-  const li = (id, icon, name) => {
+  const favs = favGet();
+  const li = (id, icon, name, star) => {
     const src = st.cache[id]; const playing = playingCtx && src && src.uri === playingCtx && st.player.is_playing;
-    return `<li data-id="${esc(id)}" class="${id===cur?"sel":""}"><svg><use href="#${icon}"/></svg><span>${esc(name)}</span>${playing?'<svg class="spk"><use href="#i-spk"/></svg>':""}</li>`;
+    const on = favs.includes(id);
+    return `<li data-id="${esc(id)}" class="${id===cur?"sel":""}"><svg><use href="#${icon}"/></svg><span>${esc(name)}</span>${playing?'<svg class="spk"><use href="#i-spk"/></svg>':""}${
+      star ? `<button class="fav${on ? " on" : ""}" data-fav="${esc(id)}" aria-label="${on ? "Unpin from" : "Pin to"} favourites"><svg><use href="#${on ? "i-star" : "i-staro"}"/></svg></button>` : ""}</li>`;
   };
   $("#lib").innerHTML = li("liked","i-lib","Liked Songs") + li("shelf","i-shelf","Record Shelf");
-  $("#pls").innerHTML = st.playlists.map(p => { sourceFor(p.id); return li(p.id, plReadable(p) ? "i-pl" : "i-plshared", p.name); }).join("")
+  // favourite playlists are pinned on top, in the order you starred them
+  const pinned = favs.map(id => st.playlists.find(p => p.id === id)).filter(Boolean);
+  const rest = st.playlists.filter(p => !favs.includes(p.id));
+  const row = p => { sourceFor(p.id); return li(p.id, plReadable(p) ? "i-pl" : "i-plshared", p.name, true); };
+  $("#pls").innerHTML = (pinned.length
+      ? `<li class="grp">Favourites</li>` + pinned.map(row).join("") + (rest.length ? `<li class="grp">All playlists</li>` : "")
+      : "") + rest.map(row).join("")
     || `<li style="color:#667">${tok || st.demo ? "Loading…" : ""}</li>`;
 }
 function currentView(){
@@ -1186,7 +1228,11 @@ function bind(){
   $("#scrim").onclick = closeSide;
   $("#outBtn").onclick = () => { if (st.demo) return toast("Demo mode"); logout(false); };
 
-  const sideClick = e => { const li = e.target.closest("li[data-id]"); if (!li) return; const s = sourceFor(li.dataset.id); if (s) openSource(s); };
+  const sideClick = e => {
+    const star = e.target.closest("[data-fav]");
+    if (star) { e.stopPropagation(); return favToggle(star.dataset.fav); }
+    const li = e.target.closest("li[data-id]"); if (!li) return; const s = sourceFor(li.dataset.id); if (s) openSource(s);
+  };
   $("#lib").onclick = sideClick; $("#pls").onclick = sideClick;
 
   const rows = $("#rows");
@@ -1894,7 +1940,7 @@ async function start(){
   const last = store.get("ot_last");
   openSource(sourceFor(last) || sourceFor(st.playlists.find(plReadable)?.id) || sourceFor("liked"));
 }
-if (!BOUNCE) start();
+if (!BOUNCE) { start(); setTimeout(checkForUpdate, 1500); }
 </script>
 </body>
 </html>

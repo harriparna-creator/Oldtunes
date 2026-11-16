@@ -44,7 +44,7 @@ final class WebViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        webView.load(URLRequest(url: Self.home))
+        webView.load(URLRequest(url: Self.home, cachePolicy: .reloadRevalidatingCacheData))   // always check for a newer version
         NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
                                                name: UIApplication.didBecomeActiveNotification, object: nil)
     }
