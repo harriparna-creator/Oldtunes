@@ -505,6 +505,12 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
   mask-image:linear-gradient(rgba(0,0,0,.95),rgba(0,0,0,.35) 60%,rgba(0,0,0,0))}
 .refl img{position:absolute;left:0;top:calc(var(--w) * -1);width:100%;height:var(--w);aspect-ratio:auto;
   transform-origin:50% 100%;transform:scaleY(-.55);border-radius:4px;filter:saturate(1.1)}
+
+/* gestures: let the browser scroll vertically, the app handles sideways swipes */
+.tablewrap,.shelfv,.srclist{touch-action:pan-y}
+#scrim{touch-action:none}
+.albumv{touch-action:pan-y}
+#lcd{touch-action:none}
 </style>
 </head>
 <body>
@@ -1689,7 +1695,7 @@ function bindNp(){
     sx = lastX = e.clientX; sp = cf.pos; moved = false; lastT = performance.now(); vel = 0;
   });
   stage.addEventListener("pointermove", e => {
-    if (e.pointerId !== id) return;
+    if (e.pointerId !== id || npV) return;
     const dx = e.clientX - sx; if (Math.abs(dx) > 6) moved = true;
     const now = performance.now(), dt = Math.max(1, now - lastT);
     vel = 0.6 * vel + 0.4 * ((e.clientX - lastX) / dt); lastX = e.clientX; lastT = now;
@@ -1701,7 +1707,9 @@ function bindNp(){
   });
   stage.addEventListener("pointerup", e => {
     if (e.pointerId !== id) return;
-    id = null; cf.dragging = false;
+    id = null;
+    if (npV) { cf.dragging = false; return; }
+    cf.dragging = false;
     if (performance.now() - lastT > 80) vel = 0;          // finger stopped before lifting: no fling
     if (!moved) {
       const hit = document.elementFromPoint(e.clientX, e.clientY);
@@ -1735,20 +1743,6 @@ function bindNp(){
   bar.addEventListener("pointerup", endScrub);
   bar.addEventListener("pointercancel", e => { if (e.pointerId === sid) { sid = null; npScrub = false; bar.classList.remove("drag"); } });
 
-  // swipe down to close (from the top bar or the song info)
-  const np = $("#np");
-  let cy = null, cid = null;
-  [".np-top", ".np-info"].forEach(sel => $(sel).addEventListener("pointerdown", e => {
-    if (e.target.closest("button")) return;
-    cid = e.pointerId; cy = e.clientY; np.style.transition = "none";
-  }));
-  np.addEventListener("pointermove", e => { if (e.pointerId !== cid) return; const dy = Math.max(0, e.clientY - cy); np.style.transform = `translateY(${dy}px)`; });
-  const endClose = e => {
-    if (e.pointerId !== cid) return;
-    const dy = e.clientY - cy; cid = null; np.style.transition = ""; np.style.transform = "";
-    if (dy > 90) closeNp();
-  };
-  np.addEventListener("pointerup", endClose); np.addEventListener("pointercancel", endClose);
 
   $("#npClose").onclick = closeNp;
   $("#npPlay").onclick = togglePlay;
@@ -1849,6 +1843,118 @@ function bindLens(){
   });
   window.addEventListener("resize", () => lensLayout(false));
 }
+/* ---------------- touch gestures ----------------
+   Pull down the playback screen or album view to close it; swipe right on the list to open the
+   playlists menu, left to close it; swipe the now-playing card left/right to skip, up to open playback. */
+function swallowNextClick(){
+  const kill = e => { e.stopPropagation(); e.preventDefault(); };
+  document.addEventListener("click", kill, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener("click", kill, { capture: true }), 400);
+}
+// direction-locked drag helper: calls onH/onV once the gesture's direction is clear
+function dragTracker(el, { accept, onStart, onMove, onEnd }){
+  let g = null;
+  el.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" || (accept && !accept(e))) return;
+    g = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), mode: null, lx: e.clientX, ly: e.clientY, lt: performance.now(), vx: 0, vy: 0 };
+  }, { passive: true });
+  el.addEventListener("pointermove", e => {
+    if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.x, dy = e.clientY - g.y, now = performance.now(), dt = Math.max(1, now - g.lt);
+    g.vx = 0.6 * g.vx + 0.4 * (e.clientX - g.lx) / dt; g.vy = 0.6 * g.vy + 0.4 * (e.clientY - g.ly) / dt;
+    g.lx = e.clientX; g.ly = e.clientY; g.lt = now;
+    if (!g.mode) {
+      if (Math.hypot(dx, dy) < 10) return;
+      g.mode = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+      if (onStart && onStart(g, e) === false) { g = null; return; }
+    }
+    onMove && onMove(g, dx, dy, e);
+  });
+  const end = e => {
+    if (!g || e.pointerId !== g.id) return;
+    const gg = g; g = null;
+    if (gg.mode) { onEnd && onEnd(gg, e.clientX - gg.x, e.clientY - gg.y, e.type === "pointercancel"); }
+  };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointercancel", end);
+}
+
+let npV = false;     // true while the playback screen is being pulled down (the carousel ignores the drag)
+function bindGestures(){
+  // 1) playlists menu: swipe right to open, left to close (phone)
+  const side = $("#side"), body = $(".body");
+  dragTracker(body, {
+    accept: e => window.innerWidth <= 760 && !e.target.closest("input,select,.pl-new"),
+    onStart: g => {
+      if (g.mode !== "h") return false;
+      g.open = side.classList.contains("open"); g.W = side.offsetWidth;
+      side.style.transition = "none";
+    },
+    onMove: (g, dx) => {
+      const x = Math.max(-g.W, Math.min(0, g.open ? dx : -g.W + dx));
+      side.style.transform = `translateX(${x}px)`;
+      $("#scrim").style.display = "block"; $("#scrim").style.opacity = String(1 + x / g.W);
+    },
+    onEnd: (g, dx, dy, cancelled) => {
+      side.style.transition = ""; side.style.transform = "";
+      $("#scrim").style.display = ""; $("#scrim").style.opacity = "";
+      const open = cancelled ? g.open : g.open ? !(dx < -g.W * 0.3 || g.vx < -0.5) : (dx > g.W * 0.3 || g.vx > 0.5);
+      side.classList.toggle("open", open);
+      swallowNextClick();
+    }
+  });
+
+  // 2) playback screen: pull down anywhere to go back to the list
+  const np = $("#np");
+  dragTracker(np, {
+    accept: e => !e.target.closest(".np-bar,.np-ctl,button"),
+    onStart: (g) => {
+      if (g.mode !== "v") return false;
+      npV = true;
+      if (cf.dragging) { cf.dragging = false; glideTo(cf.center, 0); }
+      np.style.transition = "none";
+    },
+    onMove: (g, dx, dy) => { np.style.transform = `translateY(${Math.max(0, dy)}px)`; },
+    onEnd: (g, dx, dy, cancelled) => {
+      npV = false; np.style.transition = ""; np.style.transform = "";
+      if (!cancelled && (dy > 110 || g.vy > 0.6)) closeNp();
+      swallowNextClick();
+    }
+  });
+
+  // 3) album view: pull down to close (when scrolled to the top)
+  const av = $("#albumv");
+  dragTracker(av, {
+    accept: () => av.scrollTop <= 0,
+    onStart: g => { if (g.mode !== "v") return false; av.style.transition = "none"; },
+    onMove: (g, dx, dy) => { if (dy > 0) av.style.transform = `translateY(${dy}px)`; },
+    onEnd: (g, dx, dy, cancelled) => {
+      av.style.transition = ""; av.style.transform = "";
+      if (!cancelled && (dy > 110 || g.vy > 0.6)) closeAlbum();
+      swallowNextClick();
+    }
+  });
+
+  // 4) now-playing card: swipe left = next, right = previous, up = open playback
+  const lcd = $("#lcd");
+  dragTracker(lcd, {
+    accept: e => !e.target.closest("#bar"),
+    onStart: () => { lcd.style.transition = "none"; },
+    onMove: (g, dx, dy) => {
+      if (g.mode === "h") lcd.style.transform = `translateX(${dx * 0.35}px)`;
+      else if (dy < 0) lcd.style.transform = `translateY(${dy * 0.25}px)`;
+    },
+    onEnd: (g, dx, dy, cancelled) => {
+      lcd.style.transition = "transform .25s ease-out"; lcd.style.transform = "";
+      if (!cancelled) {
+        if (g.mode === "h" && Math.abs(dx) > 50) (dx < 0 ? $("#nextBtn") : $("#prevBtn")).click();
+        else if (g.mode === "v" && dy < -30) openNp();
+      }
+      swallowNextClick();      // after acting, so only the tap the browser adds is ignored
+    }
+  });
+}
+
 function bindPress(){
   const sel = ".tbtn,.sbtn,.aqua,.np-x";
   document.addEventListener("pointerdown", e => {
@@ -1870,7 +1976,7 @@ function bindPress(){
   document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS show :active states
 }
 async function start(){
-  bind(); bindNp(); bindPress(); bindLens(); bindShelf(); bindMusic();
+  bind(); bindNp(); bindPress(); bindLens(); bindShelf(); bindGestures(); bindMusic();
   renderLcd();
   setInterval(renderLcd, 250);
   setInterval(() => { st.lineToggle++; }, 5000);
