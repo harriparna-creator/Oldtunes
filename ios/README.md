@@ -1,5 +1,11 @@
 # Old Tunes for iPhone
 
+Two apps share this native shell:
+- **Old Tunes** (OldTunes.ipa): the Spotify player.
+- **Old Tunes Music** (OldTunesMusic.ipa): plays your own music files, keeps
+  playing with the screen locked. Add songs with the **+** button (they're
+  copied into the app from Files).
+
 A small native app that runs Old Tunes full screen. It loads the app from
 https://harriparna-creator.github.io/Oldtunes/, so design updates arrive
 without reinstalling. Spotify sign-in uses the iPhone's own sign-in sheet.
@@ -9,10 +15,10 @@ without reinstalling. Spotify sign-in uses the iPhone's own sign-in sheet.
 GitHub builds the app automatically: **OldTunes.ipa** is on
 https://github.com/harriparna-creator/Oldtunes/releases/tag/app
 
-1. Download **OldTunes.ipa** from that page.
+1. Download **OldTunes.ipa** and/or **OldTunesMusic.ipa** from that page.
 2. Install **Sideloadly** from https://sideloadly.io and open it.
 3. Connect the iPhone with a cable, unlock it and tap **Trust**.
-4. Drag OldTunes.ipa into Sideloadly, type your Apple ID email, press **Start**,
+4. Drag the .ipa into Sideloadly, type your Apple ID email, press **Start**,
    and enter your Apple ID password when asked (it's sent to Apple to sign the app).
 5. On the iPhone: **Settings → Privacy & Security → Developer Mode → On** (it restarts).
 6. **Settings → General → VPN & Device Management** → your Apple ID → **Trust**.
