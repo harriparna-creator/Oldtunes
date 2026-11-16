@@ -248,11 +248,11 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 /* ---------- phone: centre highlight band (lens) ---------- */
 .lens{display:none}
 @media (max-width:760px){
-  .lensmode .lens{display:flex;position:absolute;left:6px;right:6px;z-index:4;height:84px;align-items:center;gap:12px;padding:8px 12px 8px 8px;
+  .lensmode .lens{display:flex;position:absolute;left:4px;right:4px;z-index:4;height:80px;align-items:center;gap:12px;padding:6px 12px 6px 7px;
     border-radius:8px;color:#fff;background:linear-gradient(#5a93ea,#2f67c9);border:1px solid #2a58a8;
-    box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.35);transform:translateY(-50%);cursor:pointer;
+    box-shadow:0 6px 16px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.35);cursor:pointer;
     transition:transform .15s ease-out}
-  .lensmode .lens.press{transform:translateY(-50%) scale(.98)}
+  .lensmode .lens.press{transform:scale(.98)}
   .lensmode tr.pad td{height:auto;padding:0;border:0;background:transparent!important}
   .lensmode tbody tr.sel td{background:inherit;color:inherit}
   .lensmode tbody tr.sel:nth-child(even) td{background:var(--row-alt)}
@@ -1372,23 +1372,27 @@ function demoPlay(body){
 }
 
 /* ---------------- start ---------------- */
-// Phone: the song in the middle of the list is shown enlarged with its cover; the list snaps so one song sits there.
+// Phone: the song at the top of the list is shown enlarged with its cover; the list snaps so one song sits there.
 function lensOn(){ return window.innerWidth <= 760 && !!st.current && !(st.current.kind === "playlist" && !st.current.readable); }
 const lens = { n: null, rowH: 40, top: 0, timer: null, touching: false };
 function lensGeom(){
   const tw = $("#tw"), head = tw.querySelector("thead"), first = $("#rows tr:not(.pad)");
   const headH = head ? head.offsetHeight : 22;
   lens.rowH = first ? first.offsetHeight : 40;
-  lens.mid = headH + (tw.clientHeight - headH) / 2;       // centre of the band, in list coordinates
+  lens.mid = headH + lens.rowH * 1.5;                      // band covers two rows right under the headers; the song sits in its lower half
   return { tw, headH };
 }
 function lensLayout(recentre){
   document.body.classList.toggle("lensmode", lensOn());
   if (!lensOn()) return;
   const { tw, headH } = lensGeom();
-  const padH = Math.max(0, (tw.clientHeight - headH) / 2 - lens.rowH / 2);
-  document.querySelectorAll("#rows tr.pad td").forEach(td => td.style.height = padH + "px");
-  $("#lens").style.top = (tw.offsetTop + lens.mid) + "px";
+  const pads = document.querySelectorAll("#rows tr.pad td");
+  if (pads[0]) pads[0].style.height = Math.max(0, lens.mid - headH - lens.rowH / 2) + "px";              // lets the first song reach the band
+  if (pads[1]) pads[1].style.height = Math.max(0, tw.clientHeight - lens.mid - lens.rowH / 2) + "px";   // lets the last song reach it
+
+  const L = $("#lens");
+  L.style.top = (tw.offsetTop + headH) + "px";
+  L.style.height = (lens.rowH * 2) + "px";
   if (recentre) {
     const uri = st.player && st.player.item && st.player.item.uri;
     const v = currentView();
