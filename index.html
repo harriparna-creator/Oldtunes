@@ -245,43 +245,31 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .np-hint{position:absolute;left:0;right:0;top:50%;text-align:center;color:#777;font-size:13px}
 @media (min-width:761px){#np{padding-left:40px;padding-right:40px}}
 
-/* ---------- enlarged selected song ---------- */
-tbody tr.big td{background:linear-gradient(#4f8ae6,#2f67c9)!important;color:#fff;padding:0;height:auto;border-right:0;white-space:normal}
-.bigrow{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;animation:grow .22s ease-out}
-@keyframes grow{from{opacity:.4;transform:scale(.97)}to{opacity:1;transform:none}}
-.bart{width:64px;height:64px;flex:none;border-radius:3px;overflow:hidden;background:#2b4f8f;display:grid;place-items:center;
+/* ---------- phone: centre highlight band (lens) ---------- */
+.lens{display:none}
+@media (max-width:760px){
+  .lensmode .lens{display:flex;position:absolute;left:6px;right:6px;z-index:4;height:84px;align-items:center;gap:12px;padding:8px 12px 8px 8px;
+    border-radius:8px;color:#fff;background:linear-gradient(#5a93ea,#2f67c9);border:1px solid #2a58a8;
+    box-shadow:0 8px 22px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.35);transform:translateY(-50%);cursor:pointer;
+    transition:transform .15s ease-out}
+  .lensmode .lens.press{transform:translateY(-50%) scale(.98)}
+  .lensmode tr.pad td{height:auto;padding:0;border:0;background:transparent!important}
+  .lensmode tbody tr.sel td{background:inherit;color:inherit}
+  .lensmode tbody tr.sel:nth-child(even) td{background:var(--row-alt)}
+}
+.lens .bart{width:66px;height:66px;flex:none;border-radius:4px;overflow:hidden;background:#2b4f8f;display:grid;place-items:center;
   box-shadow:0 2px 6px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.25)}
-.bart img{width:100%;height:100%;object-fit:cover;display:block}
-.bart svg{width:28px;height:28px;fill:rgba(255,255,255,.5)}
-.btxt{flex:1;min-width:0}
-.btxt div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.b1{font-size:16px;font-weight:bold;text-shadow:0 1px 0 rgba(0,0,0,.2)}
-.b2{font-size:13px;opacity:.92;margin-top:2px}
-.b3{font-size:12px;opacity:.75;margin-top:1px}
-.bside{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;font-variant-numeric:tabular-nums;opacity:.9}
-.bind svg{width:14px;height:14px;fill:#fff}
-
-/* ---------- click wheel ---------- */
-.tablewrap{padding-bottom:168px}
-.dock{position:absolute;left:50%;bottom:calc(12px);transform:translateX(-50%);z-index:5;pointer-events:none}
-.wheel{pointer-events:auto;width:136px;height:136px;border-radius:50%;position:relative;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer;
-  background:radial-gradient(circle at 50% 30%,#ffffff 0%,#f1f1f1 45%,#dadada 100%);border:1px solid #a3a3a3;
-  box-shadow:0 8px 22px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.2),inset 0 1px 0 #fff,inset 0 -3px 6px rgba(0,0,0,.07)}
-.wl{position:absolute;color:#9a9a9a;font-size:10px;font-weight:bold;letter-spacing:.6px;line-height:1;pointer-events:none;transition:color .12s}
-.wl svg{width:11px;height:11px;fill:currentColor;display:inline-block}
-.wl-menu{top:12px;left:50%;transform:translateX(-50%)}
-.wl-next{right:12px;top:50%;transform:translateY(-50%)}
-.wl-prev{left:12px;top:50%;transform:translateY(-50%)}
-.wl-pp{bottom:11px;left:50%;transform:translateX(-50%);white-space:nowrap}
-.wl-pp svg{width:9px;height:9px;margin:0 1px}
-.wheel[data-press=menu] .wl-menu,.wheel[data-press=next] .wl-next,.wheel[data-press=prev] .wl-prev,.wheel[data-press=pp] .wl-pp{color:#444}
-.hub{position:absolute;left:50%;top:50%;width:42%;height:42%;transform:translate(-50%,-50%);border-radius:50%;
-  background:linear-gradient(#f7f7f7,#d6d6d6);border:1px solid #a8a8a8;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.18);transition:filter .1s,transform .1s}
-.hub.pressed{filter:brightness(.9);transform:translate(-50%,-50%) scale(.96)}
-.wspot{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .15s;
-  background:radial-gradient(circle,rgba(0,0,0,.10),rgba(0,0,0,0) 70%)}
-.wspot.on{opacity:1}
-@media (max-width:760px){ .wheel{width:128px;height:128px} .tablewrap{padding-bottom:156px} }
+.lens .bart img{width:100%;height:100%;object-fit:cover;display:block}
+.lens .bart svg{width:28px;height:28px;fill:rgba(255,255,255,.5)}
+.lens .btxt{flex:1;min-width:0}
+.lens .btxt div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lens .b1{font-size:17px;font-weight:bold;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.lens .b2{font-size:13px;opacity:.92;margin-top:2px}
+.lens .b3{font-size:12px;opacity:.75;margin-top:1px}
+.lens .bside{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;font-variant-numeric:tabular-nums;opacity:.9}
+.lens .bind svg{width:14px;height:14px;fill:#fff}
+.lens .lin{display:flex;align-items:center;gap:12px;width:100%;min-width:0;animation:lensIn .16s ease-out}
+@keyframes lensIn{from{opacity:.35}to{opacity:1}}
 
 /* ---------- bottom sheets ---------- */
 .sheet{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;max-width:460px;margin:0 auto;
@@ -370,16 +358,7 @@ tbody tr.big td{background:linear-gradient(#4f8ae6,#2f67c9)!important;color:#fff
         </table>
         <div id="notice"></div>
       </div>
-      <div class="dock">
-        <div class="wheel" id="wheel" aria-label="Scroll wheel">
-          <span class="wl wl-menu">MENU</span>
-          <span class="wl wl-next"><svg><use href="#i-next"/></svg></span>
-          <span class="wl wl-prev"><svg><use href="#i-prev"/></svg></span>
-          <span class="wl wl-pp"><svg><use href="#i-play"/></svg><svg><use href="#i-pause"/></svg></span>
-          <div class="wspot" id="wspot"></div>
-          <div class="hub" id="hub"></div>
-        </div>
-      </div>
+      <div class="lens" id="lens" aria-live="polite"></div>
     </main>
   </div>
 
@@ -652,7 +631,11 @@ function renderTable(){
   }
   const view = currentView();
   const playingUri = st.player && st.player.item && st.player.item.uri;
-  rows.innerHTML = view.map(rowHtml).join("");
+  const pad = lensOn() && view.length ? `<tr class="pad"><td colspan="4"></td></tr>` : "";
+  rows.innerHTML = pad + view.map(rowHtml).join("") + pad;
+  if (pad) { const fresh = lens.src !== src || !lens.ready; lens.src = src; lens.ready = true;
+    requestAnimationFrame(() => { lensLayout(fresh); lensUpdate(true); }); }
+  else document.body.classList.toggle("lensmode", false);
   notice.innerHTML = src.loading && !src.tracks.length ? `<div class="empty">Loading songs…</div>`
     : (!view.length ? `<div class="empty">${st.filter ? "No songs match." : "This playlist is empty."}</div>` : "");
   renderStatus();
@@ -663,17 +646,8 @@ function playingIcon(t){
 }
 // The selected song is shown enlarged, with its album cover.
 function rowHtml(t){
-  const cls = (t.local ? " local" : "");
-  if (t.n === st.selected) {
-    const art = t.thumb || t.img;
-    const span = window.innerWidth <= 760 ? 4 : 6;   // narrow screens hide the # and Album columns
-    return `<tr data-n="${t.n}" class="sel big${cls}"><td colspan="${span}"><div class="bigrow">
-      <div class="bart">${art ? `<img src="${esc(art)}" alt="" draggable="false">` : `<svg><use href="#i-note"/></svg>`}</div>
-      <div class="btxt"><div class="b1">${esc(t.name)}</div><div class="b2">${esc(t.artist)}</div><div class="b3">${esc(t.album)}</div></div>
-      <div class="bside"><span class="bind">${playingIcon(t)}</span><span class="btime">${fmt(t.dur)}</span></div>
-    </div></td></tr>`;
-  }
-  return `<tr data-n="${t.n}" class="${cls.trim()}">
+  const cls = [t.n === st.selected ? "sel" : "", t.local ? "local" : ""].join(" ").trim();
+  return `<tr data-n="${t.n}" class="${cls}">
     <td class="ind">${playingIcon(t)}</td>
     <td class="num">${t.n}</td><td>${esc(t.name)}</td><td class="time">${fmt(t.dur)}</td><td>${esc(t.artist)}</td><td class="album">${esc(t.album)}</td></tr>`;
 }
@@ -954,9 +928,11 @@ function bind(){
   const rows = $("#rows");
   rows.addEventListener("click", e => {
     const tr = e.target.closest("tr"); if (!tr) return;
+    if (tr.classList.contains("pad")) return;
     const n = +tr.dataset.n;
-    if (n === st.selected) { if (coarse) playTrackN(n); return; }   // tap the enlarged song to play it
+    if (lensOn()) return lensScrollTo(n, true);                      // phone: tapped song slides into the highlight
     selectN(n, "nearest");
+    if (coarse) playTrackN(n);
   });
   rows.addEventListener("dblclick", e => { const tr = e.target.closest("tr"); if (tr && !coarse) playTrackN(+tr.dataset.n); });
   $("#notice").addEventListener("click", e => {
@@ -1396,62 +1372,79 @@ function demoPlay(body){
 }
 
 /* ---------------- start ---------------- */
-// iPod-style click wheel: circle a finger to move through songs; MENU / ⏮ / ⏭ / ▶❙❙ and the centre button are tappable.
-function bindWheel(){
-  const w = $("#wheel"), hub = $("#hub"), spot = $("#wspot"), STEP = 18;
-  let id = null, cx = 0, cy = 0, R = 0, lastA = 0, acc = 0, moved = 0, onHub = false;
-  const ang = e => Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
-  const zoneOf = a => a > -135 && a <= -45 ? "menu" : a > -45 && a <= 45 ? "next" : a > 45 && a <= 135 ? "pp" : "prev";
-  const showSpot = e => { spot.style.left = (e.clientX - cx + R) + "px"; spot.style.top = (e.clientY - cy + R) + "px"; spot.classList.add("on"); };
-  w.addEventListener("pointerdown", e => {
-    const r = w.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; R = r.width / 2;
-    id = e.pointerId; try { w.setPointerCapture(id); } catch(_){}
-    onHub = Math.hypot(e.clientX - cx, e.clientY - cy) < R * 0.42;
-    lastA = ang(e); acc = 0; moved = 0;
-    if (onHub) hub.classList.add("pressed");
-    else { w.dataset.press = zoneOf(lastA); showSpot(e); }
-    e.preventDefault();
-  });
-  w.addEventListener("pointermove", e => {
-    if (e.pointerId !== id || onHub) return;
-    const a = ang(e); let d = a - lastA;
-    if (d > 180) d -= 360; if (d < -180) d += 360;
-    lastA = a; acc += d; moved += Math.abs(d);
-    if (moved > 12) delete w.dataset.press;
-    showSpot(e);
-    while (acc >= STEP) { acc -= STEP; wheelStep(1); }
-    while (acc <= -STEP) { acc += STEP; wheelStep(-1); }
-  });
-  const end = e => {
-    if (e.pointerId !== id) return;
-    id = null; spot.classList.remove("on");
-    const zone = w.dataset.press; delete w.dataset.press;
-    if (onHub) { hub.classList.remove("pressed"); if (e.type === "pointerup") wheelCenter(); return; }
-    if (e.type !== "pointerup" || moved > 12 || !zone) return;
-    if (zone === "menu") { if (window.innerWidth <= 760) $("#side").classList.toggle("open"); else openNp(); }
-    else if (zone === "next") $("#nextBtn").click();
-    else if (zone === "prev") $("#prevBtn").click();
-    else togglePlay();
-  };
-  w.addEventListener("pointerup", end); w.addEventListener("pointercancel", end);
+// Phone: the song in the middle of the list is shown enlarged with its cover; the list snaps so one song sits there.
+function lensOn(){ return window.innerWidth <= 760 && !!st.current && !(st.current.kind === "playlist" && !st.current.readable); }
+const lens = { n: null, rowH: 40, top: 0, timer: null, touching: false };
+function lensGeom(){
+  const tw = $("#tw"), head = tw.querySelector("thead"), first = $("#rows tr:not(.pad)");
+  const headH = head ? head.offsetHeight : 22;
+  lens.rowH = first ? first.offsetHeight : 40;
+  lens.mid = headH + (tw.clientHeight - headH) / 2;       // centre of the band, in list coordinates
+  return { tw, headH };
 }
-function wheelStep(dir){
-  const v = currentView(); if (!v.length) return;
-  let i = v.findIndex(t => t.n === st.selected);
-  if (i < 0) {
+function lensLayout(recentre){
+  document.body.classList.toggle("lensmode", lensOn());
+  if (!lensOn()) return;
+  const { tw, headH } = lensGeom();
+  const padH = Math.max(0, (tw.clientHeight - headH) / 2 - lens.rowH / 2);
+  document.querySelectorAll("#rows tr.pad td").forEach(td => td.style.height = padH + "px");
+  $("#lens").style.top = (tw.offsetTop + lens.mid) + "px";
+  if (recentre) {
     const uri = st.player && st.player.item && st.player.item.uri;
-    const p = v.findIndex(t => t.uri === uri);
-    i = p >= 0 ? p - dir : (dir > 0 ? -1 : v.length);
+    const v = currentView();
+    const t = v.find(x => x.n === st.selected) || v.find(x => x.uri === uri) || v[0];
+    if (t) lensScrollTo(t.n, false);
   }
-  i = Math.max(0, Math.min(v.length - 1, i + dir));
-  selectN(v[i].n, "center");
+  lensUpdate();
 }
-function wheelCenter(){
-  const t = st.selected && trackByN(st.selected);
-  if (!t) return togglePlay();
-  const uri = st.player && st.player.item && st.player.item.uri;
-  if (t.uri === uri) return openNp();          // already playing: show it big
-  playTrackN(t.n);
+function lensRowAt(){
+  const tw = $("#tw"), y = tw.scrollTop + lens.mid;
+  const rows = $("#rows").children;
+  let best = null, bd = 1e9;
+  for (const tr of rows) {
+    if (tr.classList.contains("pad")) continue;
+    const c = tr.offsetTop + tr.offsetHeight / 2, d = Math.abs(c - y);
+    if (d < bd) { bd = d; best = tr; } else if (c > y) break;
+  }
+  return best;
+}
+function lensScrollTo(n, smooth){
+  const tr = $(`#rows tr[data-n="${n}"]`); if (!tr) return;
+  $("#tw").scrollTo({ top: tr.offsetTop + tr.offsetHeight / 2 - lens.mid, behavior: smooth ? "smooth" : "auto" });
+  if (!smooth) lensUpdate();
+}
+function lensUpdate(force){
+  if (!lensOn()) return;
+  const tr = lensRowAt(); if (!tr) { $("#lens").innerHTML = ""; return; }
+  const n = +tr.dataset.n;
+  if (n === lens.n && !force) return;
+  lens.n = n; st.selected = n;
+  const t = trackByN(n); if (!t) return;
+  const art = t.thumb || t.img;
+  $("#lens").innerHTML = `<div class="lin">
+    <div class="bart">${art ? `<img src="${esc(art)}" alt="" draggable="false">` : `<svg><use href="#i-note"/></svg>`}</div>
+    <div class="btxt"><div class="b1">${esc(t.name)}</div><div class="b2">${esc(t.artist)}</div><div class="b3">${esc(t.album)}</div></div>
+    <div class="bside"><span class="bind">${playingIcon(t)}</span><span class="btime">${fmt(t.dur)}</span></div></div>`;
+}
+function bindLens(){
+  const tw = $("#tw"), L = $("#lens");
+  let raf = 0;
+  tw.addEventListener("scroll", () => {
+    if (!lensOn()) return;
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; lensUpdate(); });
+    clearTimeout(lens.timer);
+    lens.timer = setTimeout(() => { if (!lens.touching && lens.n != null) lensScrollTo(lens.n, true); }, 160);   // settle on one song
+  }, { passive: true });
+  tw.addEventListener("touchstart", () => { lens.touching = true; clearTimeout(lens.timer); }, { passive: true });
+  tw.addEventListener("touchend", () => { lens.touching = false; tw.dispatchEvent(new Event("scroll")); }, { passive: true });
+  L.addEventListener("pointerdown", () => L.classList.add("press"));
+  ["pointerup","pointercancel","pointerleave"].forEach(ev => L.addEventListener(ev, () => L.classList.remove("press")));
+  L.addEventListener("click", () => {
+    const t = lens.n != null && trackByN(lens.n); if (!t) return;
+    const uri = st.player && st.player.item && st.player.item.uri;
+    if (t.uri === uri) openNp(); else playTrackN(t.n);
+  });
+  window.addEventListener("resize", () => lensLayout(false));
 }
 function bindPress(){
   const sel = ".tbtn,.sbtn,.aqua,.np-x";
@@ -1474,7 +1467,7 @@ function bindPress(){
   document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS show :active states
 }
 async function start(){
-  bind(); bindNp(); bindPress(); bindWheel();
+  bind(); bindNp(); bindPress(); bindLens();
   renderSide(); renderLcd();
   setInterval(renderLcd, 250);
   setInterval(() => { st.lineToggle++; }, 5000);
