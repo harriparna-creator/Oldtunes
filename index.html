@@ -560,7 +560,16 @@ const SCOPES = [
   "user-read-playback-state","user-modify-playback-state","user-read-currently-playing",
   "streaming","user-read-private","user-read-email"
 ].join(" ");
-const REDIRECT = location.origin + location.pathname;
+// Inside the Old Tunes iPhone app, the native shell sets window.OT_NATIVE and runs Spotify sign-in in the
+// system sign-in sheet. Spotify sends the result to this page (the https address you registered); when the
+// sign-in was started by the app, this page just hands the result straight back to the app.
+const NATIVE = window.OT_NATIVE || null;
+const BOUNCE = (() => {
+  const p = new URLSearchParams(location.search);
+  return !NATIVE && (p.get("state") || "").startsWith("native.") && (p.has("code") || p.has("error"));
+})();
+if (BOUNCE) location.replace("oldtunes://callback" + location.search);
+const REDIRECT = NATIVE ? NATIVE.redirect : location.origin + location.pathname;
 
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -599,11 +608,13 @@ async function challenge(v){
 async function login(){
   const id = clientId();
   if (!id) return showSetup();
-  const verifier = randStr(64), state = randStr(16);
+  const verifier = randStr(64), state = (NATIVE ? "native." : "") + randStr(16);
   store.set("ot_verifier", verifier); store.set("ot_state", state);
   const q = new URLSearchParams({ client_id:id, response_type:"code", redirect_uri:REDIRECT, scope:SCOPES,
     code_challenge_method:"S256", code_challenge: await challenge(verifier), state });
-  location.href = "https://accounts.spotify.com/authorize?" + q;
+  const url = "https://accounts.spotify.com/authorize?" + q;
+  if (NATIVE && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.otAuth) window.webkit.messageHandlers.otAuth.postMessage(url);
+  else location.href = url;
 }
 async function tokenRequest(body){
   const r = await fetch("https://accounts.spotify.com/api/token", { method:"POST",
@@ -614,8 +625,8 @@ async function tokenRequest(body){
   store.set("ot_token", JSON.stringify(tok));
   return tok;
 }
-async function handleCallback(){
-  const p = new URLSearchParams(location.search);
+async function handleCallback(qs){
+  const p = new URLSearchParams(qs || location.search);
   if (!p.has("code") && !p.has("error")) return false;
   history.replaceState(null, "", location.pathname);
   if (p.get("error")) { showSetup("Spotify said: " + p.get("error")); return true; }
@@ -627,6 +638,12 @@ async function handleCallback(){
   store.del("ot_verifier"); store.del("ot_state");
   return false;
 }
+// Called by the iPhone app after its sign-in sheet returns.
+window.otAuthCallback = async qs => {
+  const stop = await handleCallback(qs);
+  if (!stop) location.replace(location.pathname);
+};
+window.otNativeResume = () => { if (!tok) return; if (st.wake) resumeAfterWake(); else { refreshPlayer(); loadDevices(); } };
 let refreshing = null;
 async function getToken(){
   if (!tok) throw new Error("Not signed in");
@@ -1747,7 +1764,7 @@ async function start(){
   setInterval(renderLcd, 250);
   setInterval(() => { st.lineToggle++; }, 5000);
 
-  const standalone = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  const standalone = !!NATIVE || navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
   if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !standalone && !store.get("ot_tip")) $("#tip").classList.add("show");
   if (standalone) document.documentElement.classList.add("standalone");
   if (st.demo) {
@@ -1770,7 +1787,7 @@ async function start(){
   const last = store.get("ot_last");
   openSource(sourceFor(last) || sourceFor(st.playlists.find(plReadable)?.id) || sourceFor("liked"));
 }
-start();
+if (!BOUNCE) start();
 </script>
 </body>
 </html>
