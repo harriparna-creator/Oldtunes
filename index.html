@@ -594,11 +594,21 @@ td.num,td.time{color:var(--sub)}
 .glass::before{content:"";position:absolute;left:3%;right:3%;top:0;height:1px;background:rgba(255,255,255,.18)}
 .glass::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;
   background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.75) 50%,rgba(255,255,255,.15))}
-.refls{display:flex;gap:var(--gap);padding:8px 0 0 18px}
+.refls{display:flex;gap:var(--gap);padding:8px 0 0 16px}
 .refl{width:var(--w);height:24px;flex:none;overflow:hidden;opacity:.42;
   -webkit-mask-image:linear-gradient(#000,rgba(0,0,0,0));mask-image:linear-gradient(#000,rgba(0,0,0,0))}
 .refl img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;transform:scaleY(-1);border-radius:4px}
 .caps{padding-top:12px}
+
+/* stronger mirror reflections on the glass */
+.glass{background:
+    linear-gradient(100deg,rgba(255,255,255,0) 25%,rgba(255,255,255,.07) 38%,rgba(255,255,255,0) 52%),
+    linear-gradient(180deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.10) 55%,rgba(255,255,255,.16) 100%)}
+.refl{position:relative;height:26px;opacity:.8;
+  -webkit-mask-image:linear-gradient(rgba(0,0,0,.95),rgba(0,0,0,.35) 60%,rgba(0,0,0,0));
+  mask-image:linear-gradient(rgba(0,0,0,.95),rgba(0,0,0,.35) 60%,rgba(0,0,0,0))}
+.refl img{position:absolute;left:0;top:calc(var(--w) * -1);width:100%;height:var(--w);aspect-ratio:auto;
+  transform-origin:50% 100%;transform:scaleY(-.55);border-radius:4px;filter:saturate(1.1)}
 </style>
 </head>
 <body>
@@ -743,7 +753,7 @@ const SCOPES = [
 // Inside the Old Tunes iPhone app, the native shell sets window.OT_NATIVE and runs Spotify sign-in in the
 // system sign-in sheet. Spotify sends the result to this page (the https address you registered); when the
 // sign-in was started by the app, this page just hands the result straight back to the app.
-const BUILD = "20261116144118";      // changes with every update; used to pick up new versions straight away
+const BUILD = "20261116144415";      // changes with every update; used to pick up new versions straight away
 const NATIVE = window.OT_NATIVE || null;
 const BOUNCE = (() => {
   const p = new URLSearchParams(location.search);
