@@ -1,7 +1,7 @@
 # Old Tunes for iPhone
 
 A small native app that runs Old Tunes full screen. It loads the app from
-https://harriparna-creator.github.io/oldtunes/, so design updates arrive
+https://harriparna-creator.github.io/Oldtunes/, so design updates arrive
 without reinstalling. Spotify sign-in uses the iPhone's own sign-in sheet.
 
 ## Install without Xcode (works on Intel Macs)

@@ -5,7 +5,7 @@ import AuthenticationServices
 final class WebViewController: UIViewController {
 
     /// Where the Old Tunes web app lives.
-    static let home = URL(string: "https://harriparna-creator.github.io/oldtunes/")!
+    static let home = URL(string: "https://harriparna-creator.github.io/Oldtunes/")!
     /// Spotify sends the sign-in result to the web page you already registered (the https address above);
     /// that page passes it back to the app through this address, which the sign-in sheet catches.
     static let callbackScheme = "oldtunes"
