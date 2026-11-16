@@ -245,6 +245,44 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .np-hint{position:absolute;left:0;right:0;top:50%;text-align:center;color:#777;font-size:13px}
 @media (min-width:761px){#np{padding-left:40px;padding-right:40px}}
 
+/* ---------- enlarged selected song ---------- */
+tbody tr.big td{background:linear-gradient(#4f8ae6,#2f67c9)!important;color:#fff;padding:0;height:auto;border-right:0;white-space:normal}
+.bigrow{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;animation:grow .22s ease-out}
+@keyframes grow{from{opacity:.4;transform:scale(.97)}to{opacity:1;transform:none}}
+.bart{width:64px;height:64px;flex:none;border-radius:3px;overflow:hidden;background:#2b4f8f;display:grid;place-items:center;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.25)}
+.bart img{width:100%;height:100%;object-fit:cover;display:block}
+.bart svg{width:28px;height:28px;fill:rgba(255,255,255,.5)}
+.btxt{flex:1;min-width:0}
+.btxt div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b1{font-size:16px;font-weight:bold;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.b2{font-size:13px;opacity:.92;margin-top:2px}
+.b3{font-size:12px;opacity:.75;margin-top:1px}
+.bside{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px;font-variant-numeric:tabular-nums;opacity:.9}
+.bind svg{width:14px;height:14px;fill:#fff}
+
+/* ---------- click wheel ---------- */
+.tablewrap{padding-bottom:168px}
+.dock{position:absolute;left:50%;bottom:calc(12px);transform:translateX(-50%);z-index:5;pointer-events:none}
+.wheel{pointer-events:auto;width:136px;height:136px;border-radius:50%;position:relative;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer;
+  background:radial-gradient(circle at 50% 30%,#ffffff 0%,#f1f1f1 45%,#dadada 100%);border:1px solid #a3a3a3;
+  box-shadow:0 8px 22px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.2),inset 0 1px 0 #fff,inset 0 -3px 6px rgba(0,0,0,.07)}
+.wl{position:absolute;color:#9a9a9a;font-size:10px;font-weight:bold;letter-spacing:.6px;line-height:1;pointer-events:none;transition:color .12s}
+.wl svg{width:11px;height:11px;fill:currentColor;display:inline-block}
+.wl-menu{top:12px;left:50%;transform:translateX(-50%)}
+.wl-next{right:12px;top:50%;transform:translateY(-50%)}
+.wl-prev{left:12px;top:50%;transform:translateY(-50%)}
+.wl-pp{bottom:11px;left:50%;transform:translateX(-50%);white-space:nowrap}
+.wl-pp svg{width:9px;height:9px;margin:0 1px}
+.wheel[data-press=menu] .wl-menu,.wheel[data-press=next] .wl-next,.wheel[data-press=prev] .wl-prev,.wheel[data-press=pp] .wl-pp{color:#444}
+.hub{position:absolute;left:50%;top:50%;width:42%;height:42%;transform:translate(-50%,-50%);border-radius:50%;
+  background:linear-gradient(#f7f7f7,#d6d6d6);border:1px solid #a8a8a8;box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.18);transition:filter .1s,transform .1s}
+.hub.pressed{filter:brightness(.9);transform:translate(-50%,-50%) scale(.96)}
+.wspot{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .15s;
+  background:radial-gradient(circle,rgba(0,0,0,.10),rgba(0,0,0,0) 70%)}
+.wspot.on{opacity:1}
+@media (max-width:760px){ .wheel{width:128px;height:128px} .tablewrap{padding-bottom:156px} }
+
 /* ---------- bottom sheets ---------- */
 .sheet{position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:40;max-width:460px;margin:0 auto;
   background:linear-gradient(#f4f4f4,#dcdcdc);border:1px solid #777;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);
@@ -331,6 +369,16 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
           <tbody id="rows"></tbody>
         </table>
         <div id="notice"></div>
+      </div>
+      <div class="dock">
+        <div class="wheel" id="wheel" aria-label="Scroll wheel">
+          <span class="wl wl-menu">MENU</span>
+          <span class="wl wl-next"><svg><use href="#i-next"/></svg></span>
+          <span class="wl wl-prev"><svg><use href="#i-prev"/></svg></span>
+          <span class="wl wl-pp"><svg><use href="#i-play"/></svg><svg><use href="#i-pause"/></svg></span>
+          <div class="wspot" id="wspot"></div>
+          <div class="hub" id="hub"></div>
+        </div>
       </div>
     </main>
   </div>
@@ -506,7 +554,8 @@ function norm(t, i){
   const artists = t.artists || (t.show ? [t.show] : []);
   return { n:i+1, uri:t.uri, name:t.name || "(untitled)", artist:artists.map(a=>a.name).join(", "),
     album: t.album ? t.album.name : (t.show ? t.show.name : ""), dur:t.duration_ms,
-    img: bestImg(t.album ? t.album.images : (t.images || [])), local: !!t.is_local || !t.uri };
+    img: bestImg(t.album ? t.album.images : (t.images || [])), thumb: bestImg(t.album ? t.album.images : (t.images || []), true),
+    local: !!t.is_local || !t.uri };
 }
 
 async function loadMe(){ st.me = await api("/me"); }
@@ -603,12 +652,42 @@ function renderTable(){
   }
   const view = currentView();
   const playingUri = st.player && st.player.item && st.player.item.uri;
-  rows.innerHTML = view.map(t => `<tr data-n="${t.n}" class="${t.n===st.selected?"sel":""}${t.local?" local":""}">
-    <td class="ind">${t.uri && t.uri===playingUri ? `<svg><use href="#${st.player.is_playing?"i-spk":"i-pause"}"/></svg>` : ""}</td>
-    <td class="num">${t.n}</td><td>${esc(t.name)}</td><td class="time">${fmt(t.dur)}</td><td>${esc(t.artist)}</td><td class="album">${esc(t.album)}</td></tr>`).join("");
+  rows.innerHTML = view.map(rowHtml).join("");
   notice.innerHTML = src.loading && !src.tracks.length ? `<div class="empty">Loading songs…</div>`
     : (!view.length ? `<div class="empty">${st.filter ? "No songs match." : "This playlist is empty."}</div>` : "");
   renderStatus();
+}
+function playingIcon(t){
+  const uri = st.player && st.player.item && st.player.item.uri;
+  return t.uri && t.uri === uri ? `<svg><use href="#${st.player.is_playing ? "i-spk" : "i-pause"}"/></svg>` : "";
+}
+// The selected song is shown enlarged, with its album cover.
+function rowHtml(t){
+  const cls = (t.local ? " local" : "");
+  if (t.n === st.selected) {
+    const art = t.thumb || t.img;
+    const span = window.innerWidth <= 760 ? 4 : 6;   // narrow screens hide the # and Album columns
+    return `<tr data-n="${t.n}" class="sel big${cls}"><td colspan="${span}"><div class="bigrow">
+      <div class="bart">${art ? `<img src="${esc(art)}" alt="" draggable="false">` : `<svg><use href="#i-note"/></svg>`}</div>
+      <div class="btxt"><div class="b1">${esc(t.name)}</div><div class="b2">${esc(t.artist)}</div><div class="b3">${esc(t.album)}</div></div>
+      <div class="bside"><span class="bind">${playingIcon(t)}</span><span class="btime">${fmt(t.dur)}</span></div>
+    </div></td></tr>`;
+  }
+  return `<tr data-n="${t.n}" class="${cls.trim()}">
+    <td class="ind">${playingIcon(t)}</td>
+    <td class="num">${t.n}</td><td>${esc(t.name)}</td><td class="time">${fmt(t.dur)}</td><td>${esc(t.artist)}</td><td class="album">${esc(t.album)}</td></tr>`;
+}
+function trackByN(n){ return st.current && st.current.tracks.find(x => x.n === n); }
+function redrawRow(n){
+  const t = trackByN(n), tr = t && $(`#rows tr[data-n="${n}"]`);
+  if (tr) tr.outerHTML = rowHtml(t);
+}
+function selectN(n, how){
+  if (n == null || n === st.selected) return;
+  const old = st.selected; st.selected = n;
+  redrawRow(old); redrawRow(n);
+  const tr = $(`#rows tr[data-n="${n}"]`);
+  if (tr && how) tr.scrollIntoView({ block: how, behavior: "auto" });
 }
 function renderStatus(){
   const src = st.current;
@@ -875,9 +954,9 @@ function bind(){
   const rows = $("#rows");
   rows.addEventListener("click", e => {
     const tr = e.target.closest("tr"); if (!tr) return;
-    st.selected = +tr.dataset.n;
-    rows.querySelectorAll("tr.sel").forEach(x => x.classList.remove("sel")); tr.classList.add("sel");
-    if (coarse) playTrackN(st.selected);
+    const n = +tr.dataset.n;
+    if (n === st.selected) { if (coarse) playTrackN(n); return; }   // tap the enlarged song to play it
+    selectN(n, "nearest");
   });
   rows.addEventListener("dblclick", e => { const tr = e.target.closest("tr"); if (tr && !coarse) playTrackN(+tr.dataset.n); });
   $("#notice").addEventListener("click", e => {
@@ -937,8 +1016,7 @@ function bind(){
     else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       const v = currentView(); if (!v.length) return; e.preventDefault();
       let i = v.findIndex(t => t.n === st.selected); i = e.key === "ArrowDown" ? Math.min(v.length-1, i+1) : Math.max(0, i-1);
-      st.selected = v[i].n; renderTable();
-      const tr = $(`#rows tr[data-n="${st.selected}"]`); if (tr) tr.scrollIntoView({ block:"nearest" });
+      selectN(v[i].n, "nearest");
     } else if (e.key === "ArrowRight" && (e.metaKey || e.ctrlKey)) $("#nextBtn").click();
     else if (e.key === "ArrowLeft" && (e.metaKey || e.ctrlKey)) $("#prevBtn").click();
   });
@@ -1266,7 +1344,11 @@ function bindNp(){
   $("#npShuf").onclick = () => { $("#shufBtn").click(); cf.key = ""; setTimeout(renderNp, 50); };
   $("#npRep").onclick = () => $("#repBtn").click();
   $("#artH").onclick = openNp; $("#artImg").onclick = openNp;
-  window.addEventListener("resize", () => { if (st.npOpen) { sizeCf(); cf.key = ""; renderNp(); } });
+  let narrow = window.innerWidth <= 760;
+  window.addEventListener("resize", () => {
+    if (st.npOpen) { sizeCf(); cf.key = ""; renderNp(); }
+    if ((window.innerWidth <= 760) !== narrow) { narrow = !narrow; renderTable(); }
+  });
   document.addEventListener("keydown", e => {
     if (!st.npOpen) return;
     if (e.key === "Escape") closeNp();
@@ -1314,6 +1396,63 @@ function demoPlay(body){
 }
 
 /* ---------------- start ---------------- */
+// iPod-style click wheel: circle a finger to move through songs; MENU / ⏮ / ⏭ / ▶❙❙ and the centre button are tappable.
+function bindWheel(){
+  const w = $("#wheel"), hub = $("#hub"), spot = $("#wspot"), STEP = 18;
+  let id = null, cx = 0, cy = 0, R = 0, lastA = 0, acc = 0, moved = 0, onHub = false;
+  const ang = e => Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+  const zoneOf = a => a > -135 && a <= -45 ? "menu" : a > -45 && a <= 45 ? "next" : a > 45 && a <= 135 ? "pp" : "prev";
+  const showSpot = e => { spot.style.left = (e.clientX - cx + R) + "px"; spot.style.top = (e.clientY - cy + R) + "px"; spot.classList.add("on"); };
+  w.addEventListener("pointerdown", e => {
+    const r = w.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; R = r.width / 2;
+    id = e.pointerId; try { w.setPointerCapture(id); } catch(_){}
+    onHub = Math.hypot(e.clientX - cx, e.clientY - cy) < R * 0.42;
+    lastA = ang(e); acc = 0; moved = 0;
+    if (onHub) hub.classList.add("pressed");
+    else { w.dataset.press = zoneOf(lastA); showSpot(e); }
+    e.preventDefault();
+  });
+  w.addEventListener("pointermove", e => {
+    if (e.pointerId !== id || onHub) return;
+    const a = ang(e); let d = a - lastA;
+    if (d > 180) d -= 360; if (d < -180) d += 360;
+    lastA = a; acc += d; moved += Math.abs(d);
+    if (moved > 12) delete w.dataset.press;
+    showSpot(e);
+    while (acc >= STEP) { acc -= STEP; wheelStep(1); }
+    while (acc <= -STEP) { acc += STEP; wheelStep(-1); }
+  });
+  const end = e => {
+    if (e.pointerId !== id) return;
+    id = null; spot.classList.remove("on");
+    const zone = w.dataset.press; delete w.dataset.press;
+    if (onHub) { hub.classList.remove("pressed"); if (e.type === "pointerup") wheelCenter(); return; }
+    if (e.type !== "pointerup" || moved > 12 || !zone) return;
+    if (zone === "menu") { if (window.innerWidth <= 760) $("#side").classList.toggle("open"); else openNp(); }
+    else if (zone === "next") $("#nextBtn").click();
+    else if (zone === "prev") $("#prevBtn").click();
+    else togglePlay();
+  };
+  w.addEventListener("pointerup", end); w.addEventListener("pointercancel", end);
+}
+function wheelStep(dir){
+  const v = currentView(); if (!v.length) return;
+  let i = v.findIndex(t => t.n === st.selected);
+  if (i < 0) {
+    const uri = st.player && st.player.item && st.player.item.uri;
+    const p = v.findIndex(t => t.uri === uri);
+    i = p >= 0 ? p - dir : (dir > 0 ? -1 : v.length);
+  }
+  i = Math.max(0, Math.min(v.length - 1, i + dir));
+  selectN(v[i].n, "center");
+}
+function wheelCenter(){
+  const t = st.selected && trackByN(st.selected);
+  if (!t) return togglePlay();
+  const uri = st.player && st.player.item && st.player.item.uri;
+  if (t.uri === uri) return openNp();          // already playing: show it big
+  playTrackN(t.n);
+}
 function bindPress(){
   const sel = ".tbtn,.sbtn,.aqua,.np-x";
   document.addEventListener("pointerdown", e => {
@@ -1335,7 +1474,7 @@ function bindPress(){
   document.addEventListener("touchstart", () => {}, { passive: true });   // lets iOS show :active states
 }
 async function start(){
-  bind(); bindNp(); bindPress();
+  bind(); bindNp(); bindPress(); bindWheel();
   renderSide(); renderLcd();
   setInterval(renderLcd, 250);
   setInterval(() => { st.lineToggle++; }, 5000);
