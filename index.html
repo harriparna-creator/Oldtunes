@@ -370,6 +370,34 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .av-tr .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .av-tr .d{color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums;font-size:13px}
 .av-msg{padding:18px;text-align:center;color:rgba(255,255,255,.6);font-size:13px}
+
+/* a touch of old iOS: linen, embossed text, glossy buttons, grouped list */
+.shelfv{background:
+    radial-gradient(ellipse 70% 45% at 50% -5%,rgba(255,250,240,.9),rgba(255,250,240,0) 70%),
+    radial-gradient(ellipse 120% 90% at 50% 120%,rgba(120,100,80,.18),rgba(0,0,0,0) 60%),
+    repeating-linear-gradient(45deg,rgba(90,70,50,.035) 0 1px,rgba(0,0,0,0) 1px 3px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.18) 0 1px,rgba(0,0,0,0) 1px 3px),
+    linear-gradient(#ede8e1,#e0d8ce)}
+.sv-head h2{text-shadow:0 1px 0 rgba(255,255,255,.85)}
+.sv-sub,.cap .c1,.cap .c2,.sv-note{text-shadow:0 1px 0 rgba(255,255,255,.75)}
+.pill{border-radius:9px;border:1px solid rgba(60,45,30,.28);color:#3b342d;text-shadow:0 1px 0 rgba(255,255,255,.8);
+  background:linear-gradient(#fefefe 0%,#eeebe7 49%,#e2ded8 51%,#f1efec 100%);
+  box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(60,40,20,.15)}
+.pill:active{background:linear-gradient(#dcd8d2,#e8e5e0)}
+.ledge{background:linear-gradient(#fbefdd 0%,#e6cfae 30%,#cfb08a 70%,#b8956b 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 -1px 0 rgba(120,80,40,.35),0 6px 10px -2px rgba(60,40,20,.3),0 16px 22px -10px rgba(60,40,20,.25)}
+.rec::after{background:linear-gradient(170deg,rgba(255,255,255,.32) 0%,rgba(255,255,255,.08) 38%,rgba(255,255,255,0) 39%),linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,0) 40%)}
+.av-t{text-shadow:0 -1px 0 rgba(0,0,0,.55)}
+.av-a{text-shadow:0 -1px 0 rgba(0,0,0,.45)}
+.av-btns .pill{border-radius:9px;text-shadow:none}
+.pill.white{color:#1d1d1d;border:1px solid rgba(0,0,0,.45);text-shadow:0 1px 0 rgba(255,255,255,.8);
+  background:linear-gradient(#ffffff 0%,#f0f0f0 49%,#dcdcdc 51%,#ececec 100%);box-shadow:inset 0 1px 0 #fff,0 1px 3px rgba(0,0,0,.35)}
+.pill.light{color:#fff;border:1px solid rgba(0,0,0,.5);text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  background:linear-gradient(rgba(255,255,255,.32) 0%,rgba(255,255,255,.14) 49%,rgba(255,255,255,.04) 51%,rgba(255,255,255,.12) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 1px 2px rgba(0,0,0,.3)}
+.av-tracks{border-radius:10px;border:1px solid rgba(0,0,0,.4);background:rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 1px 0 rgba(255,255,255,.06)}
+.av-tr{text-shadow:0 -1px 0 rgba(0,0,0,.45)}
+.av-tr+.av-tr{border-top:1px solid rgba(0,0,0,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
 #npShelf.on svg{fill:#9fc1ff}
 
 /* ---------- bottom sheets ---------- */
@@ -1183,7 +1211,7 @@ function renderShelf(){
         : `<div class="cap"><div class="c1">${esc(it.a.name)}</div><div class="c2">${esc(it.a.artist)}</div></div>`).join(""));
   }
   const shelves = Math.ceil(items.length / per);
-  for (let i = shelves; i < 2; i++) html += shelf(`<div style="height:${Math.round(w * .35)}px"></div>`, "");   // an empty ledge waiting to be filled
+  for (let i = shelves; i < 3; i++) html += shelf(`<div style="height:${Math.round(w * .35)}px"></div>`, "");   // an empty ledge waiting to be filled
   html += `<div class="sv-note">Saved on this device</div>`;
   v.innerHTML = html;
 }
