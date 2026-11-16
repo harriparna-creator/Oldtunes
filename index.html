@@ -421,6 +421,113 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 ::-webkit-scrollbar-thumb{border-radius:8px;border:3px solid transparent;background-clip:padding-box;
   background-color:#6f9be0;background-image:linear-gradient(90deg,#9fc1f3,#4a7fd6 50%,#7aa8ec)}
 @media (pointer:coarse){::-webkit-scrollbar{width:0;height:0}}
+
+/* =================== modern skin =================== */
+:root{
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --accent:#2f6fde; --accent2:#4d8af0; --ink:#1d1d1f; --sub:#86868b; --hair:rgba(0,0,0,.08);
+  --glass:linear-gradient(rgba(252,252,253,.97),rgba(245,245,247,.97)); --row-alt:#f7f7f9;
+}
+html,body{font-family:var(--font);color:var(--ink);letter-spacing:-.01em}
+#app{background:#111}
+.body{background:#fff}
+
+/* bars: frosted glass */
+header,footer{background:var(--glass);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);
+  box-shadow:none;border-color:var(--hair)}
+header{border-bottom:.5px solid var(--hair);gap:16px}
+footer{border-top:.5px solid var(--hair)}
+
+/* transport: flat round buttons, filled play */
+.tbtn{background:rgba(0,0,0,.05);border:0;box-shadow:none}
+.tbtn svg{fill:var(--ink)}
+.tbtn.big{background:var(--ink);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.tbtn.big svg{fill:#fff}
+.tbtn:active,.tbtn.on{background:rgba(0,0,0,.12)}
+.tbtn.big:active{background:#3a3a3c}
+.menubtn{background:transparent}
+
+/* now playing card instead of the LCD */
+.lcd{background:#fff;border:.5px solid var(--hair);border-radius:14px;color:var(--ink);
+  box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 18px -8px rgba(0,0,0,.18)}
+.lcd .l1{font-weight:600;letter-spacing:-.01em}
+.lcd .l2{color:var(--sub)}
+.lcd .prog{color:var(--sub);font-variant-numeric:tabular-nums}
+.lcd .bar{height:4px;border:0;border-radius:2px;background:rgba(0,0,0,.08)}
+.lcd .fill{background:var(--ink);opacity:1;border-radius:2px}
+.lcd .knob{width:9px;height:9px;border-radius:50%;transform:translate(-50%,-50%);background:var(--ink);box-shadow:0 0 0 2px #fff}
+.lcd .idle{color:var(--ink);font-weight:600}
+.lcd .idle svg,.lcd .expand{fill:var(--sub)}
+
+/* search */
+.search input{border:0;border-radius:10px;background:rgba(118,118,128,.12);box-shadow:none}
+.search input:focus{box-shadow:0 0 0 3px rgba(47,111,222,.3)}
+.search svg{fill:var(--sub)}
+
+/* sidebar */
+aside{background:#f5f5f7;border-right:.5px solid var(--hair)}
+.src-h{color:var(--sub);text-shadow:none;font-weight:600;font-size:11px;letter-spacing:.04em}
+.srclist li{margin:1px 8px;padding-left:10px;border-radius:8px}
+.srclist li.sel{background:var(--accent);border:0;text-shadow:none;font-weight:600}
+.art{border-top:.5px solid var(--hair);background:#f5f5f7}
+.art .h{background:transparent;border-bottom:0;color:var(--sub);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+
+/* song list */
+th{background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  border-bottom:.5px solid var(--hair);border-right:0;color:var(--sub);font-weight:600;font-size:11px}
+th.sorted{background:rgba(255,255,255,.92);color:var(--accent);font-weight:700}
+td{border-right:0}
+tbody tr:nth-child(even) td{background:var(--row-alt)}
+tbody tr.sel td{background:var(--accent);border-right-color:transparent}
+td.num,td.time{color:var(--sub)}
+.empty{color:var(--sub)}
+
+/* phone highlight band */
+@media (max-width:760px){
+  .lensmode .lens{border-radius:14px;border:0;background:linear-gradient(135deg,var(--accent2),var(--accent));
+    box-shadow:0 10px 24px -8px rgba(47,111,222,.55)}
+}
+.lens .bart{border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.lens .b1{text-shadow:none;font-weight:700}
+
+/* footer controls */
+.sbtn{border:0;border-radius:8px;background:transparent}
+.sbtn svg{fill:var(--ink)}
+.sbtn.on{background:rgba(47,111,222,.14)}
+.sbtn.on svg{fill:var(--accent)}
+.sbtn .one{color:var(--accent)}
+.status{color:var(--sub);text-shadow:none}
+.devsel select{border:0;border-radius:8px;background:rgba(118,118,128,.12)}
+
+/* buttons, sheets, setup */
+.aqua{border:0;border-radius:10px;background:var(--accent);text-shadow:none;box-shadow:none;font-weight:600}
+.aqua.grey{background:rgba(118,118,128,.14);color:var(--ink)}
+.sheet{border:0;border-radius:18px;background:rgba(250,250,252,.9);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);
+  box-shadow:0 20px 50px rgba(0,0,0,.3)}
+#toast{border-radius:12px;background:rgba(29,29,31,.88);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.win{border:0;border-radius:16px;background:#fff;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.win .tb{background:transparent;border-bottom:.5px solid var(--hair);color:var(--ink)}
+.win .tb .dots i{border:0}
+.win .tb .dots i:nth-child(1){background:#ff5f57}.win .tb .dots i:nth-child(2){background:#febc2e}.win .tb .dots i:nth-child(3){background:#28c840}
+.win input[type=text]{border:0;border-radius:8px;background:rgba(118,118,128,.12);box-shadow:none}
+.win code{border:0;background:rgba(118,118,128,.12);border-radius:6px}
+
+/* playback screen: flat translucent controls */
+.np-ctl .tbtn{background:rgba(255,255,255,.1)}
+.np-ctl .tbtn svg{fill:#fff}
+.np-ctl .tbtn.big{background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.np-ctl .tbtn.big svg{fill:#111}
+.np-ctl .sbtn{background:transparent;border:0}
+.np-ctl .sbtn.on{background:rgba(255,255,255,.14)}
+.np-ctl .sbtn.on svg{fill:#fff}
+.np-bar::before{height:4px;background:rgba(255,255,255,.18);box-shadow:none}
+.np-fill{height:4px;background:#fff}
+.np-knob{width:12px;height:12px;background:#fff;top:14px}
+
+/* thin scrollbars */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent;border:0}
+::-webkit-scrollbar-thumb{border:2px solid transparent;background-clip:padding-box;background-color:rgba(0,0,0,.22);background-image:none}
 </style>
 </head>
 <body>
