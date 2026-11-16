@@ -479,6 +479,22 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .albumv .av-tr{text-shadow:none}
 .albumv .av-tr+.av-tr{border-top:.5px solid rgba(255,255,255,.08);box-shadow:none}
 .albumv .av-t,.albumv .av-a{text-shadow:none}
+
+/* glass shelf seen slightly from above: covers stand on it and reflect in it */
+.ledge{display:none}
+.recs{position:relative;z-index:1}
+.rec{-webkit-box-reflect:none;box-shadow:0 8px 10px -8px rgba(0,0,0,.95),0 0 0 .5px rgba(255,255,255,.10)}
+.glass{position:relative;margin:-9px -12px 0;height:34px;
+  clip-path:polygon(3% 0,97% 0,100% 100%,0 100%);
+  background:linear-gradient(180deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.09) 55%,rgba(255,255,255,.14) 100%)}
+.glass::before{content:"";position:absolute;left:3%;right:3%;top:0;height:1px;background:rgba(255,255,255,.18)}
+.glass::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;
+  background:linear-gradient(90deg,rgba(255,255,255,.15),rgba(255,255,255,.75) 50%,rgba(255,255,255,.15))}
+.refls{display:flex;gap:var(--gap);padding:8px 0 0 18px}
+.refl{width:var(--w);height:24px;flex:none;overflow:hidden;opacity:.42;
+  -webkit-mask-image:linear-gradient(#000,rgba(0,0,0,0));mask-image:linear-gradient(#000,rgba(0,0,0,0))}
+.refl img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;transform:scaleY(-1);border-radius:4px}
+.caps{padding-top:12px}
 </style>
 </head>
 <body>
@@ -1341,7 +1357,7 @@ function renderShelf(){
   let html = `<div class="sv-head"><div class="grow"><h2>Record Shelf</h2><div class="sv-sub">${list.length} album${list.length === 1 ? "" : "s"}</div></div>
     <button class="pill" data-act="import">Add Music</button></div>`;
   if (!list.length) html += `<div class="sv-empty">Your albums appear here automatically. Tap Add Music to import songs from Files.</div>`;
-  const shelf = (recs, caps) => `<div class="shelf" style="--w:${w}px;--gap:${gap}px"><div class="recs">${recs}</div><div class="ledge"></div><div class="caps">${caps}</div></div>`;
+  const shelf = (recs, caps, refls = "") => `<div class="shelf" style="--w:${w}px;--gap:${gap}px"><div class="recs">${recs}</div><div class="glass"><div class="refls">${refls}</div></div><div class="caps">${caps}</div></div>`;
   let k = 0;
   for (let i = 0; i < items.length; i += per) {
     const row = items.slice(i, i + per);
@@ -1350,7 +1366,8 @@ function renderShelf(){
       : `<button class="rec" data-id="${esc(it.a.id)}" style="--d:${(k++) * 40}ms" aria-label="${esc(it.a.name)}">${
           it.a.img ? `<img src="${esc(it.a.img)}" alt="" loading="lazy" draggable="false">` : `<div class="ph"><svg><use href="#i-note"/></svg></div>`}</button>`).join(""),
       row.map(it => it.add ? `<div class="cap"><div class="c2">Now playing</div></div>`
-        : `<div class="cap"><div class="c1">${esc(it.a.name)}</div><div class="c2">${esc(it.a.artist)}</div></div>`).join(""));
+        : `<div class="cap"><div class="c1">${esc(it.a.name)}</div><div class="c2">${esc(it.a.artist)}</div></div>`).join(""),
+      row.map(it => `<div class="refl">${!it.add && it.a.img ? `<img src="${esc(it.a.img)}" alt="" loading="lazy">` : ""}</div>`).join(""));
   }
   const shelves = Math.ceil(items.length / per);
   for (let i = shelves; i < 3; i++) html += shelf(`<div style="height:${Math.round(w * .35)}px"></div>`, "");   // an empty ledge waiting to be filled
