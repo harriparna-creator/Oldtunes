@@ -332,9 +332,30 @@ footer{background:var(--metal);border-top:1px solid #7b7b7b;display:flex;align-i
 .albumv::before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(0,0,0,.05),rgba(0,0,0,.45) 60%,rgba(0,0,0,.7));pointer-events:none}
 .av-top{display:flex;justify-content:space-between;align-items:center;min-height:44px}
 .av-top .np-x svg{fill:rgba(255,255,255,.85)}
-.av-cover{width:min(74vw,340px);aspect-ratio:1/1;margin:8px auto 0;border-radius:6px;overflow:hidden;background:#333;
-  box-shadow:0 30px 60px -20px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.12)}
+/* sleeve + record: the record slides out of the sleeve after the cover lands */
+.av-stage{position:relative;width:min(60vw,300px);aspect-ratio:1/1;margin:14px auto 0}
+.av-cover{position:absolute;inset:0;z-index:2;border-radius:4px;overflow:hidden;background:#333;
+  box-shadow:0 30px 60px -20px rgba(0,0,0,.7),0 0 0 .5px rgba(255,255,255,.12);
+  transform:translateX(0);transition:transform 1s cubic-bezier(.25,.9,.25,1)}
 .av-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.av-cover::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,0) 40%),linear-gradient(90deg,rgba(0,0,0,0) 92%,rgba(0,0,0,.25))}
+.av-disc{position:absolute;top:2.5%;left:2.5%;width:95%;height:95%;z-index:1;border-radius:50%;
+  transform:translateX(0) rotate(-160deg);transition:transform 1s cubic-bezier(.25,.9,.25,1)}
+.av-stage.out .av-cover{transform:translateX(-24%)}
+.av-stage.out .av-disc{transform:translateX(30%) rotate(0deg)}
+.av-disc .grooves{position:absolute;inset:0;border-radius:50%;
+  background:
+    radial-gradient(circle,#0b0b0b 0 1.6%,rgba(0,0,0,0) 1.8%),
+    radial-gradient(circle,rgba(0,0,0,0) 0 31%,#0a0a0a 31.5% 33%,rgba(0,0,0,0) 33.5%),
+    radial-gradient(circle,rgba(0,0,0,0) 0 96%,#000 97%),
+    repeating-radial-gradient(circle,#151515 0 1px,#0c0c0c 1px 2.4px);
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.04)}
+.av-disc .grooves::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 30deg,rgba(255,255,255,0) 0 8%,rgba(255,255,255,.13) 13%,rgba(255,255,255,0) 19% 55%,rgba(255,255,255,.09) 62%,rgba(255,255,255,0) 69%)}
+.av-disc .label{position:absolute;left:33%;top:33%;width:34%;height:34%;border-radius:50%;background:#b8483c center/cover no-repeat;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.35),0 0 0 2px rgba(0,0,0,.25)}
+.av-disc .label::after{content:"";position:absolute;left:45%;top:45%;width:10%;height:10%;border-radius:50%;background:#0b0b0b;box-shadow:0 0 0 1px rgba(255,255,255,.15)}
 .av-meta{text-align:center;margin-top:20px}
 .av-t{font-size:22px;font-weight:700;letter-spacing:-.3px}
 .av-a{font-size:15px;color:rgba(255,255,255,.7);margin-top:4px}
@@ -1171,21 +1192,25 @@ async function openAlbum(id, fromEl){
   const ov = $("#albumv");
   ov.innerHTML = `<div class="av-bg"${a.img ? ` style="background-image:url('${esc(a.img)}')"` : ""}></div>
     <div class="av-top"><button class="np-x" data-a="close" aria-label="Close"><svg><use href="#i-down"/></svg></button><span></span></div>
-    <div class="av-cover">${a.img ? `<img src="${esc(a.img)}" alt="">` : ""}</div>
+    <div class="av-stage">
+      <div class="av-disc"><div class="grooves"></div><div class="label"${a.img ? ` style="background-image:url('${esc(a.img)}')"` : ""}></div></div>
+      <div class="av-cover">${a.img ? `<img src="${esc(a.img)}" alt="">` : ""}</div>
+    </div>
     <div class="av-meta"><div class="av-t">${esc(a.name)}</div><div class="av-a">${esc(a.artist)}${a.year ? " · " + esc(a.year) : ""}</div>
       <div class="av-btns"><button class="pill white" data-a="play">▶&nbsp; Play</button><button class="pill light" data-a="shuf">Shuffle</button><button class="pill light" data-a="rm">Remove</button></div></div>
     <div class="av-tracks" id="avTracks"><div class="av-msg">Loading songs…</div></div>`;
   ov.dataset.id = id; ov.scrollTop = 0;
   ov.classList.add("show"); ov.setAttribute("aria-hidden", "false");
-  const cov = ov.querySelector(".av-cover");          // fly the cover from the shelf to the middle
+  const stage = ov.querySelector(".av-stage");      // fly the sleeve from the shelf to the middle, then pull the record out
   if (fromEl) {
-    const r1 = fromEl.getBoundingClientRect(), r2 = cov.getBoundingClientRect();
-    cov.style.transformOrigin = "0 0";
-    cov.style.transform = `translate(${r1.left - r2.left}px,${r1.top - r2.top}px) scale(${r1.width / r2.width})`;
-    cov.getBoundingClientRect();
-    cov.style.transition = "transform .45s cubic-bezier(.2,.8,.2,1)";
-    cov.style.transform = "";
+    const r1 = fromEl.getBoundingClientRect(), r2 = stage.getBoundingClientRect();
+    stage.style.transformOrigin = "0 0";
+    stage.style.transform = `translate(${r1.left - r2.left}px,${r1.top - r2.top}px) scale(${r1.width / r2.width})`;
+    stage.getBoundingClientRect();
+    stage.style.transition = "transform .5s cubic-bezier(.2,.8,.2,1)";
+    stage.style.transform = "";
   }
+  setTimeout(() => { if (ov.dataset.id === id) stage.classList.add("out"); }, fromEl ? 480 : 120);
   if (st.demo) { $("#avTracks").innerHTML = `<div class="av-msg">Songs appear here.</div>`; return; }
   try {
     const j = await api(`/albums/${encodeURIComponent(id)}/tracks?limit=50`);
