@@ -538,6 +538,51 @@ td.num,td.time{color:var(--sub)}
 ::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent;border:0}
 ::-webkit-scrollbar-thumb{border:2px solid transparent;background-clip:padding-box;background-color:rgba(0,0,0,.22);background-image:none}
+
+/* =================== Record Shelf: black glass =================== */
+.shelfv{color:#f5f5f7;background:
+    radial-gradient(ellipse 80% 40% at 50% -8%,rgba(255,255,255,.10),rgba(255,255,255,0) 70%),
+    radial-gradient(ellipse 120% 80% at 50% 115%,rgba(80,90,120,.14),rgba(0,0,0,0) 60%),
+    linear-gradient(#151517,#0a0a0b)}
+.sv-head h2{color:#f5f5f7;text-shadow:none;letter-spacing:-.02em}
+.sv-sub{color:#8e8e93;text-shadow:none}
+.shelfv .pill{border:.5px solid rgba(255,255,255,.18);border-radius:999px;color:#f5f5f7;text-shadow:none;
+  background:rgba(255,255,255,.08);box-shadow:none;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.shelfv .pill:active{background:rgba(255,255,255,.16)}
+.shelf{padding-top:34px}
+.rec{transform:none;border-radius:4px;background:#1c1c1e;
+  box-shadow:0 14px 28px -12px rgba(0,0,0,.95),0 0 0 .5px rgba(255,255,255,.10);
+  -webkit-box-reflect:below 2px linear-gradient(transparent 74%,rgba(255,255,255,.20));
+  animation-name:recGlassIn}
+@keyframes recGlassIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.rec img,.rec::after{border-radius:4px}
+.rec::after{background:linear-gradient(165deg,rgba(255,255,255,.16),rgba(255,255,255,0) 38%)}
+.rec:active{transform:translateY(-5px) scale(1.02)}
+@media (hover:hover){.rec:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 22px 34px -12px rgba(0,0,0,.95),0 0 0 .5px rgba(255,255,255,.16)}}
+.rec .ph{background:linear-gradient(135deg,#2c2c2e,#1c1c1e)}
+.rec.add{border:1px dashed rgba(255,255,255,.22);color:#aeaeb2;-webkit-box-reflect:none;background:rgba(255,255,255,.03)}
+.rec.add b{color:#f5f5f7}
+/* smoked glass ledge with a lit front edge */
+.ledge{height:12px;margin:0 -6px;border-radius:3px;
+  background:linear-gradient(180deg,rgba(255,255,255,.26) 0,rgba(255,255,255,.07) 28%,rgba(40,42,48,.55) 30%,rgba(12,12,14,.82) 100%);
+  border-top:1px solid rgba(255,255,255,.45);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  box-shadow:inset 0 -1px 0 rgba(255,255,255,.14),0 20px 30px -10px rgba(0,0,0,.85)}
+.ledge::before{top:auto;bottom:-1px;height:1px;border-radius:0;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.35),rgba(255,255,255,0))}
+.ledge::after{height:18px;background:linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,0))}
+.caps{padding-top:24px}
+.cap .c1{color:#f2f2f7;text-shadow:none}
+.cap .c2{color:#8e8e93;text-shadow:none}
+.sv-empty{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.1);color:#c7c7cc}
+.sv-note{color:#636366;text-shadow:none}
+/* album view: matching glass buttons */
+.albumv .pill.white{background:#f5f5f7;color:#111;border:0;text-shadow:none;box-shadow:0 6px 18px rgba(0,0,0,.35);border-radius:999px}
+.albumv .pill.light{background:rgba(255,255,255,.14);color:#fff;border:.5px solid rgba(255,255,255,.2);text-shadow:none;box-shadow:none;border-radius:999px;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.albumv .av-tracks{border:.5px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(20,20,22,.45);box-shadow:none}
+.albumv .av-tr{text-shadow:none}
+.albumv .av-tr+.av-tr{border-top:.5px solid rgba(255,255,255,.08);box-shadow:none}
+.albumv .av-t,.albumv .av-a{text-shadow:none}
 </style>
 </head>
 <body>
@@ -682,7 +727,7 @@ const SCOPES = [
 // Inside the Old Tunes iPhone app, the native shell sets window.OT_NATIVE and runs Spotify sign-in in the
 // system sign-in sheet. Spotify sends the result to this page (the https address you registered); when the
 // sign-in was started by the app, this page just hands the result straight back to the app.
-const BUILD = "20261116142819";      // changes with every update; used to pick up new versions straight away
+const BUILD = "20261116143823";      // changes with every update; used to pick up new versions straight away
 const NATIVE = window.OT_NATIVE || null;
 const BOUNCE = (() => {
   const p = new URLSearchParams(location.search);
