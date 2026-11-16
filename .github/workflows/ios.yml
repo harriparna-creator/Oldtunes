@@ -1,6 +1,6 @@
 name: Build iPhone app
 
-# Builds an unsigned OldTunes.ipa on GitHub's Macs and puts it on the "app" release page.
+# Builds unsigned OldTunes.ipa and OldTunesMusic.ipa on GitHub's Macs and puts them on the "app" release page.
 # Install it on the iPhone with Sideloadly (signs it with your own Apple ID).
 on:
   push:
@@ -24,29 +24,33 @@ jobs:
         working-directory: ios
         run: xcodegen generate
 
-      - name: Build app (unsigned)
+      - name: Build apps (unsigned)
         working-directory: ios
         run: |
-          xcodebuild -project OldTunes.xcodeproj -target OldTunes -configuration Release -sdk iphoneos \
-            SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          for T in OldTunes OldTunesMusic; do
+            xcodebuild -project OldTunes.xcodeproj -target $T -configuration Release -sdk iphoneos \
+              SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          done
 
-      - name: Package .ipa
+      - name: Package .ipa files
         working-directory: ios
         run: |
-          mkdir -p Payload
-          cp -R build/Release-iphoneos/OldTunes.app Payload/
-          zip -qry OldTunes.ipa Payload
-          ls -lh OldTunes.ipa
+          for T in OldTunes OldTunesMusic; do
+            rm -rf Payload && mkdir -p Payload
+            cp -R build/Release-iphoneos/$T.app Payload/
+            zip -qry $T.ipa Payload
+          done
+          ls -lh *.ipa
 
       - uses: actions/upload-artifact@v4
         with:
           name: OldTunes-ipa
-          path: ios/OldTunes.ipa
+          path: ios/*.ipa
 
       - name: Publish to the "app" release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view app >/dev/null 2>&1 || gh release create app --title "Old Tunes for iPhone" \
-            --notes "Download OldTunes.ipa and install it with Sideloadly (see ios/README.md)."
-          gh release upload app ios/OldTunes.ipa --clobber
+            --notes "OldTunes.ipa = Spotify player, OldTunesMusic.ipa = your own music. Install with Sideloadly (see ios/README.md)."
+          gh release upload app ios/OldTunes.ipa ios/OldTunesMusic.ipa --clobber

@@ -826,7 +826,7 @@ function renderStatus(){
   if (src.kind === "playlist" && !src.readable) { $("#status").textContent = src.total != null ? `${src.total} songs` : ""; return; }
   const v = currentView(); const ms = v.reduce((a,t)=>a+(t.dur||0),0);
   const h = ms/3600000;
-  const time = h >= 1 ? `${h.toFixed(1)} hours` : `${Math.round(ms/60000)} minutes`;
+  const time = h >= 1 ? `${h.toFixed(1)} hours` : `${Math.round(ms/60000)} minute${Math.round(ms/60000) === 1 ? "" : "s"}`;
   $("#status").textContent = `${v.length} song${v.length===1?"":"s"}, ${time}${src.loading?" — loading…":""}`;
 }
 

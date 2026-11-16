@@ -1,5 +1,7 @@
 # Xcode project definition for XcodeGen (https://github.com/yonaskolb/XcodeGen).
-# Run ./setup.sh to generate OldTunes.xcodeproj from this file.
+# Two apps share the same native shell:
+#   OldTunes       – the Spotify player   (loads /Oldtunes/)
+#   OldTunesMusic  – plays your own files (loads /Oldtunes/music/), with background audio
 name: OldTunes
 options:
   bundleIdPrefix: com.harriparna
@@ -11,6 +13,11 @@ settings:
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    SUPPORTS_MACCATALYST: NO
+    ENABLE_PREVIEWS: NO
+    ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 targets:
   OldTunes:
     type: application
@@ -21,17 +28,42 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.harriparna.oldtunes
         PRODUCT_NAME: OldTunes
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        TARGETED_DEVICE_FAMILY: "1"
-        CODE_SIGN_STYLE: Automatic
-        SUPPORTS_MACCATALYST: NO
-        ENABLE_PREVIEWS: NO
     info:
-      path: OldTunes/Info.plist
+      path: Plists/OldTunes-Info.plist
       properties:
         CFBundleDisplayName: Old Tunes
+        OTHomeURL: https://harriparna-creator.github.io/Oldtunes/
         LSRequiresIPhoneOS: true
         LSApplicationQueriesSchemes: [spotify]
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UIViewControllerBasedStatusBarAppearance: true
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+
+  OldTunesMusic:
+    type: application
+    platform: iOS
+    sources:
+      - path: OldTunes/OldTunesApp.swift
+      - path: OldTunes/WebViewController.swift
+      - path: OldTunesMusic
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.harriparna.oldtunesmusic
+        PRODUCT_NAME: OldTunesMusic
+    info:
+      path: Plists/OldTunesMusic-Info.plist
+      properties:
+        CFBundleDisplayName: Old Tunes Music
+        OTHomeURL: https://harriparna-creator.github.io/Oldtunes/music/
+        OTBackgroundAudio: true
+        UIBackgroundModes: [audio]
+        LSRequiresIPhoneOS: true
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIStatusBarStyle: UIStatusBarStyleLightContent

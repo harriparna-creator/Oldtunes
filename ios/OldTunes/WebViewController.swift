@@ -4,8 +4,9 @@ import AuthenticationServices
 
 final class WebViewController: UIViewController {
 
-    /// Where the Old Tunes web app lives.
-    static let home = URL(string: "https://harriparna-creator.github.io/Oldtunes/")!
+    /// Which web app this shell runs (set per app in its Info.plist as OTHomeURL).
+    static let home = URL(string: (Bundle.main.object(forInfoDictionaryKey: "OTHomeURL") as? String)
+                          ?? "https://harriparna-creator.github.io/Oldtunes/")!
     /// Spotify sends the sign-in result to the web page you already registered (the https address above);
     /// that page passes it back to the app through this address, which the sign-in sheet catches.
     static let callbackScheme = "oldtunes"
@@ -20,6 +21,7 @@ final class WebViewController: UIViewController {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()                 // keeps you signed in and keeps your Record Shelf
         config.allowsInlineMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = []   // lets the next song start on its own
         config.applicationNameForUserAgent = "OldTunesApp/1.0 Mobile/15E148 Safari/604.1"
 
         let content = WKUserContentController()
